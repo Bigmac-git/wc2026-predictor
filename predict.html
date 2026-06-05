@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WC 2026 Predictor — Submit Your Predictions</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#006847; --gold:#C8A84B; --red:#BF0A30;
+  --dark:#080d0a; --mid:#101810; --card:#131f16;
+  --border:#1a2e1e; --text:#e8f0ea; --muted:#6a8a72;
+  --input-bg:#0d1810; --input-border:#1e3028;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;font-weight:300;
+  background-image:radial-gradient(ellipse at 15% 0%,rgba(0,104,71,.15) 0%,transparent 55%),
+  radial-gradient(ellipse at 85% 80%,rgba(200,168,75,.08) 0%,transparent 50%);}
+
+/* HEADER */
+header{text-align:center;padding:48px 20px 32px;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(0,104,71,.06) 59px,rgba(0,104,71,.06) 60px);}
+.badge{display:inline-block;background:var(--gold);color:#000;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;padding:4px 14px;text-transform:uppercase;margin-bottom:14px;}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,8vw,80px);letter-spacing:4px;line-height:.9;color:#fff;text-shadow:0 0 60px rgba(200,168,75,.25);}
+h1 span{color:var(--gold);}
+.subtitle{margin-top:14px;font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+
+/* NAV PILLS */
+.step-nav{display:flex;justify-content:center;gap:8px;padding:20px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.step-pill{background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 16px;cursor:pointer;transition:all .2s;text-decoration:none;}
+.step-pill.active,.step-pill:hover{background:var(--green);border-color:var(--green);color:#fff;}
+
+/* MAIN */
+main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
+
+/* STEP PANELS */
+.step{display:none;animation:fadeIn .3s ease;}
+.step.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+.step-header{margin-bottom:28px;}
+.step-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--gold);}
+.step-desc{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6;max-width:600px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);margin-bottom:16px;overflow:hidden;}
+.card-header{background:var(--green);padding:10px 18px;display:flex;justify-content:space-between;align-items:center;}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;}
+.card-sub{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.55);text-transform:uppercase;}
+.card-body{padding:18px;}
+
+/* MATCH ROWS */
+.match-row{display:grid;grid-template-columns:1fr 52px 28px 52px 1fr;gap:6px;align-items:center;margin-bottom:10px;}
+.match-row:last-child{margin-bottom:0;}
+.team-label{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;}
+.team-label.away{text-align:right;}
+.score-input{width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;padding:6px 4px;outline:none;transition:border-color .2s;}
+.score-input:focus{border-color:var(--gold);}
+.vs{text-align:center;font-size:11px;color:var(--muted);}
+
+/* PREDICTION FIELDS */
+.pred-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.pred-group{display:flex;flex-direction:column;gap:5px;}
+.pred-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.pred-input{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:14px;padding:8px 12px;outline:none;transition:border-color .2s;width:100%;}
+.pred-input:focus{border-color:var(--gold);}
+
+/* NAME INPUT */
+.name-block{background:var(--card);border:1px solid var(--border);padding:28px;margin-bottom:32px;}
+.name-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.name-input{width:100%;background:var(--input-bg);border:2px solid var(--input-border);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;padding:12px 18px;outline:none;transition:border-color .2s;}
+.name-input:focus{border-color:var(--gold);}
+
+/* AWARDS */
+.awards-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.award-field{background:var(--card);border:1px solid var(--border);padding:16px;}
+.award-pts{float:right;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);}
+.award-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block;}
+.award-input{width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:15px;padding:8px 12px;outline:none;transition:border-color .2s;}
+.award-input:focus{border-color:var(--gold);}
+
+/* TOTT PITCH */
+.pitch-wrap{background:linear-gradient(180deg,#0d4a24 0%,#083318 100%);border:1px solid rgba(255,255,255,.07);padding:20px;margin-top:20px;}
+.pitch-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:16px;}
+.pitch-row{display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.pitch-slot{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);padding:8px 10px;text-align:center;min-width:90px;}
+.pitch-pos{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;color:var(--gold);text-transform:uppercase;}
+.pitch-player-input{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.2);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;text-align:center;padding:4px 2px;outline:none;margin-top:4px;}
+.pitch-player-input:focus{border-bottom-color:var(--gold);}
+
+/* NAV BUTTONS */
+.nav-btns{display:flex;justify-content:space-between;margin-top:32px;gap:12px;}
+.btn{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;padding:14px 32px;border:none;cursor:pointer;transition:all .2s;}
+.btn-back{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-back:hover{border-color:var(--muted);color:var(--text);}
+.btn-next{background:var(--green);color:#fff;}
+.btn-next:hover{background:#00815a;}
+.btn-submit{background:var(--gold);color:#000;}
+.btn-submit:hover{background:#d4b050;}
+
+/* PROGRESS */
+.progress-bar{height:3px;background:var(--border);margin-bottom:0;}
+.progress-fill{height:100%;background:var(--gold);transition:width .4s ease;}
+
+/* TOAST */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--green);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:1px;padding:14px 28px;border-left:4px solid var(--gold);transition:transform .4s ease;z-index:999;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{background:#8b0000;}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .pred-grid{grid-template-columns:1fr;}
+  .awards-grid{grid-template-columns:1fr;}
+  .match-row{grid-template-columns:1fr 44px 20px 44px 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="progress" style="width:14%"></div></div>
+
+<header>
+  <div class="badge">FIFA World Cup 2026</div>
+  <h1>ENTER YOUR<br><span>PREDICTIONS</span></h1>
+  <div class="subtitle">K. Led Prediction League — Fill in every section to submit</div>
+</header>
+
+<nav class="step-nav" id="stepNav"></nav>
+
+<main>
+  <!-- STEP 0: Your Name -->
+  <div class="step active" id="step-0">
+    <div class="step-header">
+      <div class="step-title">Your Details</div>
+      <div class="step-desc">Enter your name to identify your predictions on the leaderboard.</div>
+    </div>
+    <div class="name-block">
+      <div class="name-label">Your Name</div>
+      <input class="name-input" id="playerName" type="text" placeholder="ENTER YOUR NAME" maxlength="30" autocomplete="off">
+    </div>
+    <div class="nav-btns">
+      <span></span>
+      <button class="btn btn-next" onclick="goStep(1)">Start Predictions →</button>
+    </div>
+  </div>
+
+  <!-- STEPS 1–12: Groups A–L -->
+  <div id="groupSteps"></div>
+
+  <!-- STEP 13: Knockout Rounds -->
+  <div class="step" id="step-13">
+    <div class="step-header">
+      <div class="step-title">Knockout Stages — B &amp; C</div>
+      <div class="step-desc">Enter scores for Round of 32 through to the Final. Teams will be confirmed as the tournament progresses — fill in what you can now and update before the deadlines.</div>
+    </div>
+    <div id="knockoutForm"></div>
+    <div class="nav-btns">
+      <button class="btn btn-back" onclick="goStep(12)">← Back</button>
+      <button class="btn btn-next" onclick="goStep(14)">Awards →</button>
+    </div>
+  </div>
+
+  <!-- STEP 14: Awards -->
+  <div class="step" id="step-14">
+    <div class="step-header">
+      <div class="step-title">Section D — Awards &amp; Records</div>
+      <div class="step-desc">Individual award predictions. Big points available here!</div>
+    </div>
+
+    <div class="awards-grid" style="margin-bottom:16px;">
+      <div class="award-field">
+        <span class="award-pts">7</span>
+        <span class="award-label">Golden Boot Winner</span>
+        <input class="award-input" id="golden_boot" placeholder="Player name...">
+      </div>
+      <div class="award-field">
+        <span class="award-pts">7</span>
+        <span class="award-label">Golden Glove Winner</span>
+        <input class="award-input" id="golden_glove" placeholder="Goalkeeper name...">
+      </div>
+      <div class="award-field">
+        <span class="award-pts">7</span>
+        <span class="award-label">Player of the Tournament</span>
+        <input class="award-input" id="player_tourney" placeholder="Player name...">
+      </div>
+      <div class="award-field">
+        <span class="award-pts">10</span>
+        <span class="award-label">Tournament Winner</span>
+        <input class="award-input" id="tournament_winner" placeholder="Country name...">
+      </div>
+      <div class="award-field">
+        <span class="award-pts">10</span>
+        <span class="award-label">Player to be Sent Off</span>
+        <input class="award-input" id="player_sent_off" placeholder="Player name...">
+      </div>
+      <div class="award-field">
+        <span class="award-pts">8</span>
+        <span class="award-label">Team to Lose on Penalties</span>
+        <input class="award-input" id="team_lose_pens" placeholder="Country name...">
+      </div>
+      <div class="award-field" style="grid-column:1/-1">
+        <span class="award-pts">10</span>
+        <span class="award-label">Player to Miss a Penalty (any stage)</span>
+        <input class="award-input" id="player_miss_pen" placeholder="Player name...">
+      </div>
+    </div>
+
+    <div class="pitch-wrap">
+      <div class="pitch-title">Team of the Tournament — 11 Players (3 pts each)</div>
+      <div id="tottPitch"></div>
+    </div>
+
+    <div class="nav-btns">
+      <button class="btn btn-back" onclick="goStep(13)">← Back</button>
+      <button class="btn btn-next" onclick="goStep(15)">Review →</button>
+    </div>
+  </div>
+
+  <!-- STEP 15: Review & Submit -->
+  <div class="step" id="step-15">
+    <div class="step-header">
+      <div class="step-title">Review &amp; Submit</div>
+      <div class="step-desc">Check everything looks right then hit submit. You'll receive a confirmation when saved.</div>
+    </div>
+    <div id="reviewPanel"></div>
+    <div class="nav-btns">
+      <button class="btn btn-back" onclick="goStep(14)">← Back</button>
+      <button class="btn btn-submit" onclick="submitPredictions()">🏆 Submit Predictions</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+// ============================================================
+//  GROUPS DATA
+// ============================================================
+const TOTT_POSITIONS = [
+  {pos:'GK',  row:0},
+  {pos:'DEF', row:1},{pos:'DEF',row:1},{pos:'DEF',row:1},{pos:'DEF',row:1},
+  {pos:'MID', row:2},{pos:'MID',row:2},{pos:'MID',row:2},
+  {pos:'ATT', row:3},{pos:'ATT',row:3},{pos:'ATT',row:3},
+];
+
+let currentStep = 0;
+const TOTAL_STEPS = 16; // 0=name, 1-12=groups, 13=knockout, 14=awards, 15=review
+const stepLabels = ['Name', 'Grp A','Grp B','Grp C','Grp D','Grp E','Grp F','Grp G','Grp H','Grp I','Grp J','Grp K','Grp L','Knockout','Awards','Review'];
+
+// ---- Build step nav ----
+const nav = document.getElementById('stepNav');
+stepLabels.forEach((lbl, i) => {
+  const a = document.createElement('button');
+  a.className = 'step-pill' + (i===0?' active':'');
+  a.textContent = lbl;
+  a.onclick = () => goStep(i);
+  a.id = `pill-${i}`;
+  nav.appendChild(a);
+});
+
+// ---- Build group steps ----
+const groupContainer = document.getElementById('groupSteps');
+GROUPS.forEach((g, gi) => {
+  const stepIdx = gi + 1;
+  const div = document.createElement('div');
+  div.className = 'step';
+  div.id = `step-${stepIdx}`;
+
+  const matchups = groupMatchups(g.teams);
+  const matchHTML = matchups.map(([t1,t2], mi) => `
+    <div class="match-row">
+      <span class="team-label">${t1}</span>
+      <input class="score-input" type="number" min="0" max="99" id="g${g.letter}_m${mi}_h" placeholder="0">
+      <span class="vs">—</span>
+      <input class="score-input" type="number" min="0" max="99" id="g${g.letter}_m${mi}_a" placeholder="0">
+      <span class="team-label away">${t2}</span>
+    </div>
+  `).join('');
+
+  div.innerHTML = `
+    <div class="step-header">
+      <div class="step-title">Group ${g.letter}</div>
+      <div class="step-desc">Enter your predicted scores for all 6 Group ${g.letter} matches, then fill in your group predictions below.</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Match Scores</span><span class="card-sub">6 Matches</span></div>
+      <div class="card-body">${matchHTML}</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Group Predictions</span><span class="card-sub">Bonus Points</span></div>
+      <div class="card-body">
+        <div class="pred-grid">
+          <div class="pred-group">
+            <label class="pred-label">Top Scorer in Group (7 pts)</label>
+            <input class="pred-input" id="g${g.letter}_topscorer" placeholder="Player name...">
+          </div>
+          <div class="pred-group">
+            <label class="pred-label">Group Winner (5 pts)</label>
+            <input class="pred-input" id="g${g.letter}_winner" placeholder="Country...">
+          </div>
+          <div class="pred-group">
+            <label class="pred-label">Player to be Carded (5 pts)</label>
+            <input class="pred-input" id="g${g.letter}_carded" placeholder="Player name...">
+          </div>
+          <div class="pred-group">
+            <label class="pred-label">2nd Place (6 pts)</label>
+            <input class="pred-input" id="g${g.letter}_2nd" placeholder="Country...">
+          </div>
+          <div class="pred-group">
+            <label class="pred-label">Own Goal Scorer (10 pts)</label>
+            <input class="pred-input" id="g${g.letter}_og" placeholder="Player name...">
+          </div>
+          <div class="pred-group">
+            <label class="pred-label">3rd Place (6 pts, if qualified)</label>
+            <input class="pred-input" id="g${g.letter}_3rd" placeholder="Country...">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-back" onclick="goStep(${stepIdx-1})">← Back</button>
+      <button class="btn btn-next" onclick="goStep(${stepIdx+1})">${stepIdx < 12 ? 'Group '+ GROUPS[gi+1]?.letter+' →' : 'Knockout →'}</button>
+    </div>
+  `;
+  groupContainer.appendChild(div);
+});
+
+// ---- Build knockout form ----
+function buildKnockoutSection(title, fixtures, sectionNote) {
+  let html = `<div class="card"><div class="card-header"><span class="card-title">${title}</span></div><div class="card-body">`;
+  if (sectionNote) html += `<p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;">${sectionNote}</p>`;
+  fixtures.forEach(f => {
+    html += `
+      <div style="margin-bottom:12px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Game ${f.no}</div>
+        <div class="match-row">
+          <span class="team-label" style="font-size:12px;">${f.home}</span>
+          <input class="score-input" type="number" min="0" max="99" id="ko${f.no}_h" placeholder="—">
+          <span class="vs">—</span>
+          <input class="score-input" type="number" min="0" max="99" id="ko${f.no}_a" placeholder="—">
+          <span class="team-label away" style="font-size:12px;">${f.away}</span>
+        </div>
+      </div>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+document.getElementById('knockoutForm').innerHTML =
+  buildKnockoutSection('Round of 32', KNOCKOUT_FIXTURES.r32, 'Fill in as teams become known. First game: Sunday 28th June.') +
+  buildKnockoutSection('Round of 16', KNOCKOUT_FIXTURES.r16, '') +
+  buildKnockoutSection('Quarter Finals', KNOCKOUT_FIXTURES.qf, 'Must be completed in full — no re-population after QF.') +
+  buildKnockoutSection('Semi Finals', KNOCKOUT_FIXTURES.sf, '') +
+  buildKnockoutSection('Final', KNOCKOUT_FIXTURES.final, '');
+
+// ---- Build TOTT pitch ----
+(function buildTott() {
+  const rows = {};
+  TOTT_POSITIONS.forEach((p,i) => { if(!rows[p.row]) rows[p.row]=[];  rows[p.row].push({...p,idx:i}); });
+  const pitch = document.getElementById('tottPitch');
+  Object.values(rows).reverse().forEach(row => {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'pitch-row';
+    row.forEach(p => {
+      rowDiv.innerHTML += `<div class="pitch-slot"><div class="pitch-pos">${p.pos}</div><input class="pitch-player-input" id="tott_${p.idx}" placeholder="Player..."></div>`;
+    });
+    pitch.appendChild(rowDiv);
+  });
+})();
+
+// ---- Step navigation ----
+function goStep(n) {
+  if (n < 0 || n >= TOTAL_STEPS) return;
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.step-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById(`step-${n}`)?.classList.add('active');
+  document.getElementById(`pill-${n}`)?.classList.add('active');
+  document.getElementById('progress').style.width = Math.round((n/(TOTAL_STEPS-1))*100)+'%';
+  currentStep = n;
+  if (n === 15) buildReview();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ---- Collect all form data ----
+function collectData() {
+  const data = { playerName: document.getElementById('playerName').value.trim(), submittedAt: new Date().toISOString() };
+  // Groups
+  GROUPS.forEach(g => {
+    groupMatchups(g.teams).forEach(([,], mi) => {
+      const h = document.getElementById(`g${g.letter}_m${mi}_h`)?.value;
+      const a = document.getElementById(`g${g.letter}_m${mi}_a`)?.value;
+      if (h !== '') data[`g${g.letter}_m${mi}_h`] = h;
+      if (a !== '') data[`g${g.letter}_m${mi}_a`] = a;
+    });
+    ['topscorer','winner','carded','og','2nd','3rd'].forEach(field => {
+      const v = document.getElementById(`g${g.letter}_${field}`)?.value.trim();
+      if (v) data[`g${g.letter}_${field}`] = v;
+    });
+  });
+  // Knockout
+  [...KNOCKOUT_FIXTURES.r32,...KNOCKOUT_FIXTURES.r16,...KNOCKOUT_FIXTURES.qf,...KNOCKOUT_FIXTURES.sf,...KNOCKOUT_FIXTURES.final].forEach(f => {
+    const h = document.getElementById(`ko${f.no}_h`)?.value;
+    const a = document.getElementById(`ko${f.no}_a`)?.value;
+    if (h !== '') data[`ko${f.no}_h`] = h;
+    if (a !== '') data[`ko${f.no}_a`] = a;
+  });
+  // Awards
+  ['golden_boot','golden_glove','player_tourney','tournament_winner','player_sent_off','team_lose_pens','player_miss_pen'].forEach(id => {
+    const v = document.getElementById(id)?.value.trim();
+    if (v) data[id] = v;
+  });
+  // TOTT
+  data.tott = TOTT_POSITIONS.map((p,i) => ({ pos: p.pos, player: document.getElementById(`tott_${i}`)?.value.trim() || '' }));
+  return data;
+}
+
+// ---- Review panel ----
+function buildReview() {
+  const d = collectData();
+  let html = `<div class="card"><div class="card-header"><span class="card-title">Submitting as</span></div><div class="card-body"><div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--gold);letter-spacing:3px;">${d.playerName || '<span style="color:var(--red)">⚠ NO NAME ENTERED</span>'}</div></div></div>`;
+  html += `<div class="card"><div class="card-header"><span class="card-title">Awards</span></div><div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">`;
+  const awardLabels = {golden_boot:'Golden Boot',golden_glove:'Golden Glove',player_tourney:'Player of Tournament',tournament_winner:'Tournament Winner',player_sent_off:'Sent Off',team_lose_pens:'Lose on Pens',player_miss_pen:'Miss Pen'};
+  Object.entries(awardLabels).forEach(([k,lbl]) => {
+    html += `<div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-family:'Barlow Condensed',sans-serif;">${lbl}</div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;">${d[k]||'<em style="color:var(--muted)">Not entered</em>'}</div></div>`;
+  });
+  html += `</div></div>`;
+  document.getElementById('reviewPanel').innerHTML = html;
+}
+
+// ---- Submit ----
+async function submitPredictions() {
+  const data = collectData();
+  if (!data.playerName) { showToast('Please enter your name first!', true); goStep(0); return; }
+
+  showToast('Saving your predictions…');
+  const safeName = data.playerName.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  const path = `${CONFIG.SUBMISSIONS_PATH}/${safeName}.json`;
+
+  try {
+    const existing = await ghGet(path);
+    const ok = await ghPut(path, data, existing?.sha, `Prediction: ${data.playerName}`);
+    if (ok) {
+      showToast('🏆 Predictions saved! Good luck!');
+      setTimeout(() => window.location.href = 'leaderboard.html', 2500);
+    } else {
+      showToast('Save failed — check your config settings', true);
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+}
+
+function showToast(msg, error=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (error?' error':'');
+  if (!error) setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

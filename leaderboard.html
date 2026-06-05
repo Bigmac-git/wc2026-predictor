@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WC 2026 Predictor — Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#006847;--gold:#C8A84B;--red:#BF0A30;
+  --dark:#080d0a;--mid:#101810;--card:#131f16;
+  --border:#1a2e1e;--text:#e8f0ea;--muted:#6a8a72;
+  --rank1:#C8A84B;--rank2:#9aa5a7;--rank3:#b87333;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;font-weight:300;
+  background-image:radial-gradient(ellipse at 10% 0%,rgba(0,104,71,.18) 0%,transparent 50%),radial-gradient(ellipse at 90% 100%,rgba(200,168,75,.1) 0%,transparent 50%);}
+
+/* HEADER */
+header{text-align:center;padding:44px 20px 28px;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(0,104,71,.06) 59px,rgba(0,104,71,.06) 60px);}
+.badge{display:inline-block;background:var(--gold);color:#000;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;padding:4px 14px;margin-bottom:12px;}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,7vw,72px);letter-spacing:4px;line-height:.9;color:#fff;text-shadow:0 0 60px rgba(200,168,75,.25);}
+h1 span{color:var(--gold);}
+.header-meta{display:flex;justify-content:center;gap:24px;margin-top:16px;flex-wrap:wrap;}
+.meta-item{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.meta-item strong{color:var(--text);}
+.live-dot{display:inline-block;width:7px;height:7px;background:#00ff88;border-radius:50%;margin-right:5px;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* NAV */
+.top-nav{display:flex;justify-content:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);}
+.nav-link{font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:8px 18px;border:1px solid transparent;transition:all .2s;}
+.nav-link:hover,.nav-link.active{color:var(--gold);border-color:var(--gold);}
+.nav-link.cta{background:var(--green);color:#fff;border-color:var(--green);}
+.nav-link.cta:hover{background:#00815a;}
+
+/* MAIN */
+main{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
+
+/* LOADING */
+#loadingState{text-align:center;padding:80px 20px;}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+/* STATUS BAR */
+.status-bar{background:var(--card);border:1px solid var(--border);padding:12px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.status-left{font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
+.refresh-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;cursor:pointer;transition:all .2s;}
+.refresh-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* PODIUM */
+.podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:28px;align-items:end;}
+.podium-card{background:var(--card);border:1px solid var(--border);text-align:center;padding:20px 16px;position:relative;overflow:hidden;transition:transform .2s;}
+.podium-card:hover{transform:translateY(-3px);}
+.podium-card.p1{border-color:var(--rank1);background:linear-gradient(160deg,rgba(200,168,75,.12) 0%,var(--card) 60%);}
+.podium-card.p2{border-color:var(--rank2);}
+.podium-card.p3{border-color:var(--rank3);}
+.podium-rank{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;margin-bottom:4px;}
+.p1 .podium-rank{color:var(--rank1);}
+.p2 .podium-rank{color:var(--rank2);}
+.p3 .podium-rank{color:var(--rank3);}
+.podium-name{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#fff;margin-bottom:4px;}
+.podium-pts{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);}
+.podium-pts strong{color:var(--gold);font-size:28px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.section-chips{display:flex;justify-content:center;gap:5px;margin-top:10px;flex-wrap:wrap;}
+.chip{font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:2px 8px;letter-spacing:1px;}
+.chip-a{background:rgba(0,104,71,.3);color:#5fd49a;}
+.chip-b{background:rgba(200,168,75,.2);color:#d4b050;}
+.chip-c{background:rgba(191,10,48,.2);color:#e06070;}
+.chip-d{background:rgba(100,100,200,.2);color:#8090e0;}
+
+/* FULL TABLE */
+.table-wrap{background:var(--card);border:1px solid var(--border);overflow-x:auto;}
+.lb-table{width:100%;border-collapse:collapse;}
+.lb-table th{background:var(--green);font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.7);padding:11px 16px;text-align:left;white-space:nowrap;}
+.lb-table th.r{text-align:right;}
+.lb-table td{padding:0;border-bottom:1px solid var(--border);}
+.lb-table tr:last-child td{border-bottom:none;}
+.lb-table tr:hover .row-main{background:rgba(255,255,255,.03);}
+
+/* TABLE ROW */
+.row-main{display:grid;grid-template-columns:50px 1fr 80px 70px 70px 70px 70px 50px;align-items:center;cursor:pointer;transition:background .15s;}
+.col-rank{padding:14px 0 14px 16px;font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--muted);}
+.col-rank.r1{color:var(--rank1);}
+.col-rank.r2{color:var(--rank2);}
+.col-rank.r3{color:var(--rank3);}
+.col-name{padding:14px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;}
+.col-total{padding:14px 8px;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);text-align:right;}
+.col-sec{padding:14px 8px;font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:right;color:var(--muted);}
+.col-sec.sec-a{color:#5fd49a;}
+.col-sec.sec-b{color:#d4b050;}
+.col-sec.sec-c{color:#e06070;}
+.col-sec.sec-d{color:#8090e0;}
+.col-expand{padding:14px 16px 14px 8px;text-align:right;color:var(--muted);font-size:14px;}
+.sec-header{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:6px 16px 2px;text-align:right;}
+
+/* EXPANDED DETAIL */
+.row-detail{display:none;background:rgba(0,0,0,.3);border-top:1px solid var(--border);}
+.row-detail.open{display:block;}
+.detail-inner{padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
+.detail-item{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.03);border-left:2px solid var(--border);}
+.detail-item.scored{border-left-color:var(--gold);}
+.detail-label{font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;}
+.detail-pts{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold);}
+.detail-section{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 20px 4px;border-top:1px solid var(--border);}
+
+/* LAST UPDATED */
+.last-updated{font-size:11px;color:var(--muted);text-align:center;margin-top:24px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
+
+/* LIVE SCORES TICKER */
+.ticker{background:var(--mid);border-bottom:1px solid var(--border);padding:8px 20px;overflow:hidden;white-space:nowrap;}
+.ticker-inner{display:inline-block;animation:ticker 30s linear infinite;}
+@keyframes ticker{from{transform:translateX(100vw);}to{transform:translateX(-100%);}}
+.ticker-item{display:inline-block;margin-right:48px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;}
+.ticker-item .score{color:var(--gold);font-weight:700;}
+.ticker-item .live{color:#00ff88;font-size:10px;margin-left:4px;}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .podium{grid-template-columns:1fr;}
+  .row-main{grid-template-columns:40px 1fr 70px 40px;}
+  .col-sec,.sec-header,.col-expand{display:none;}
+  .col-expand.show{display:block;}
+}
+</style>
+</head>
+<body>
+
+<div class="ticker"><div class="ticker-inner" id="ticker">Loading live scores…</div></div>
+
+<header>
+  <div class="badge">Live Leaderboard</div>
+  <h1>WC 2026<br><span>PREDICTOR</span></h1>
+  <div class="header-meta">
+    <span class="meta-item"><span class="live-dot"></span>Live Scoring</span>
+    <span class="meta-item" id="playerCount">— Players</span>
+    <span class="meta-item" id="matchesScored">— Matches Scored</span>
+    <span class="meta-item" id="lastRefresh">Last updated: —</span>
+  </div>
+</header>
+
+<nav class="top-nav">
+  <a href="leaderboard.html" class="nav-link active">🏆 Leaderboard</a>
+  <a href="predict.html" class="nav-link cta">+ Submit Predictions</a>
+  <a href="admin.html" class="nav-link">⚙ Admin</a>
+</nav>
+
+<main>
+  <div id="loadingState">
+    <div class="spinner"></div>
+    <div class="load-text" id="loadStatus">Fetching live data…</div>
+  </div>
+
+  <div id="leaderboardContent" style="display:none;">
+    <div class="status-bar">
+      <div class="status-left" id="statusText"></div>
+      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    </div>
+
+    <!-- Podium top 3 -->
+    <div class="podium" id="podium"></div>
+
+    <!-- Full table -->
+    <div class="table-wrap">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th class="r">Total</th>
+            <th class="r" style="color:#5fd49a">Sec A</th>
+            <th class="r" style="color:#d4b050">Sec B</th>
+            <th class="r" style="color:#e06070">Sec C</th>
+            <th class="r" style="color:#8090e0">Sec D</th>
+            <th class="r"></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="last-updated" id="lastUpdated"></div>
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+let allScored = [];
+let liveData = { fixtures: [], standings: [], topScorers: [], topCards: [] };
+
+async function loadAll() {
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('leaderboardContent').style.display = 'none';
+  setLoadStatus('Fetching live match data from API…');
+
+  try {
+    // Fetch live data in parallel
+    const [fixtures, standings, topScorers, topCards] = await Promise.all([
+      fetchAllFixtures(),
+      fetchStandings(),
+      fetchTopScorers(),
+      fetchTopCards(),
+    ]);
+    liveData = {
+      fixtures: fixtures || [],
+      standings: standings?.[0]?.league?.standings?.flat() || [],
+      topScorers: topScorers || [],
+      topCards: topCards || [],
+    };
+
+    const finishedCount = liveData.fixtures.filter(f => f.fixture.status.short === 'FT').length;
+    document.getElementById('matchesScored').textContent = `${finishedCount}/104 Matches`;
+    buildTicker(liveData.fixtures);
+
+    setLoadStatus('Loading player submissions…');
+    const files = await ghList(CONFIG.SUBMISSIONS_PATH);
+    if (!files || files.length === 0) {
+      setLoadStatus('No submissions found yet.');
+      document.getElementById('loadingState').style.display = 'block';
+      return;
+    }
+
+    // Fetch & score all submissions
+    const scored = [];
+    for (const file of files) {
+      if (!file.name.endsWith('.json')) continue;
+      setLoadStatus(`Scoring ${file.name}…`);
+      const sub = await ghGet(`${CONFIG.SUBMISSIONS_PATH}/${file.name}`);
+      if (!sub) continue;
+      const result = scoreSubmission(sub.content, liveData);
+      scored.push({ name: sub.content.playerName || file.name, ...result, prediction: sub.content });
+    }
+
+    // Sort by total desc
+    scored.sort((a,b) => b.total - a.total);
+    allScored = scored;
+
+    document.getElementById('playerCount').textContent = `${scored.length} Players`;
+    document.getElementById('statusText').textContent = `${scored.length} entries scored against ${finishedCount} finished matches`;
+    document.getElementById('lastRefresh').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+    document.getElementById('lastUpdated').textContent = `Last refreshed: ${new Date().toLocaleString()}`;
+
+    renderPodium(scored);
+    renderTable(scored);
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('leaderboardContent').style.display = 'block';
+
+  } catch(e) {
+    setLoadStatus('Error loading data: ' + e.message);
+    console.error(e);
+  }
+}
+
+function setLoadStatus(msg) {
+  document.getElementById('loadStatus').textContent = msg;
+}
+
+function buildTicker(fixtures) {
+  const recent = fixtures.filter(f => ['FT','LIVE','1H','2H','HT'].includes(f.fixture.status.short)).slice(-15);
+  if (!recent.length) return;
+  const items = recent.map(f => {
+    const isLive = ['LIVE','1H','2H','HT'].includes(f.fixture.status.short);
+    return `<span class="ticker-item">${f.teams.home.name} <span class="score">${f.goals.home??'-'} — ${f.goals.away??'-'}</span> ${f.teams.away.name}${isLive?'<span class="live">● LIVE</span>':''}</span>`;
+  }).join('');
+  document.getElementById('ticker').innerHTML = items + items; // double for seamless loop
+}
+
+function renderPodium(scored) {
+  const top3 = scored.slice(0, 3);
+  const podium = document.getElementById('podium');
+  podium.innerHTML = '';
+  // Reorder: 2nd, 1st, 3rd for visual podium
+  const order = [top3[1], top3[0], top3[2]];
+  const classes = ['p2','p1','p3'];
+  const ranks = [2,1,3];
+  order.forEach((s, i) => {
+    if (!s) return;
+    const div = document.createElement('div');
+    div.className = `podium-card ${classes[i]}`;
+    div.innerHTML = `
+      <div class="podium-rank">${ranks[i] === 1 ? '🏆' : ranks[i]}</div>
+      <div class="podium-name">${s.name}</div>
+      <div class="podium-pts"><strong>${s.total}</strong> pts</div>
+      <div class="section-chips">
+        <span class="chip chip-a">A: ${s.breakdown.A}</span>
+        <span class="chip chip-b">B: ${s.breakdown.B}</span>
+        <span class="chip chip-c">C: ${s.breakdown.C}</span>
+        <span class="chip chip-d">D: ${s.breakdown.D}</span>
+      </div>
+    `;
+    podium.appendChild(div);
+  });
+}
+
+function renderTable(scored) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  scored.forEach((s, i) => {
+    const rank = i + 1;
+    const rankClass = rank <= 3 ? `r${rank}` : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="row-main" onclick="toggleDetail(${i})">
+          <div class="col-rank ${rankClass}">${rank}</div>
+          <div class="col-name">${s.name}</div>
+          <div class="col-total">${s.total}</div>
+          <div class="col-sec sec-a">${s.breakdown.A}</div>
+          <div class="col-sec sec-b">${s.breakdown.B}</div>
+          <div class="col-sec sec-c">${s.breakdown.C}</div>
+          <div class="col-sec sec-d">${s.breakdown.D}</div>
+          <div class="col-expand show" id="expand-icon-${i}">▼</div>
+        </div>
+        <div class="row-detail" id="detail-${i}">
+          ${buildDetailHTML(s)}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildDetailHTML(s) {
+  if (!s.detail || s.detail.length === 0) {
+    return `<div style="padding:16px 20px;color:var(--muted);font-size:13px;">No points scored yet — waiting for match results.</div>`;
+  }
+  const bySection = {A:[],B:[],C:[],D:[]};
+  s.detail.forEach(d => bySection[d.section]?.push(d));
+  let html = `<div class="detail-inner">`;
+  ['A','B','C','D'].forEach(sec => {
+    if (bySection[sec].length === 0) return;
+    html += `</div><div class="detail-section">Section ${sec} — ${s.breakdown[sec]} pts</div><div class="detail-inner">`;
+    bySection[sec].forEach(d => {
+      html += `<div class="detail-item scored"><span class="detail-label">${d.label}</span><span class="detail-pts">+${d.pts}</span></div>`;
+    });
+  });
+  html += `</div>`;
+
+  // Add unscored predictions preview
+  html += `<div class="detail-section" style="color:var(--muted);">Pending Predictions</div><div class="detail-inner">`;
+  const pred = s.prediction;
+  const awards = {golden_boot:'Golden Boot',golden_glove:'Golden Glove',player_tourney:'POTT',tournament_winner:'Winner',player_sent_off:'Sent Off',team_lose_pens:'Lose Pens',player_miss_pen:'Miss Pen'};
+  Object.entries(awards).forEach(([k,lbl]) => {
+    if (pred[k]) html += `<div class="detail-item"><span class="detail-label">${lbl}: ${pred[k]}</span><span class="detail-pts" style="color:var(--muted)">?</span></div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function toggleDetail(i) {
+  const detail = document.getElementById(`detail-${i}`);
+  const icon = document.getElementById(`expand-icon-${i}`);
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open', !isOpen);
+  icon.textContent = isOpen ? '▼' : '▲';
+}
+
+// Auto-refresh every 5 minutes
+setInterval(loadAll, 5 * 60 * 1000);
+loadAll();
+</script>
+</body>
+</html>
