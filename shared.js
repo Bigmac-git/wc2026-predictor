@@ -154,13 +154,25 @@ async function ghList(folder) {
 // ============================================================
 async function apiFootball(endpoint, params={}) {
   const qs = new URLSearchParams({league: CONFIG.WC_LEAGUE_ID, season: CONFIG.WC_SEASON, ...params});
-  const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(`https://v3.football.api-sports.io/${endpoint}?${qs}`)}`;
-  const r = await fetch(proxyUrl, {
-    headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY }
-  });
-  if (!r.ok) return null;
-  const d = await r.json();
-  return d.response;
+  // Try direct API first, then fallback proxies
+  const urls = [
+    { url: `https://v3.football.api-sports.io/${endpoint}?${qs}`, headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY } },
+    { url: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://v3.football.api-sports.io/${endpoint}?${qs}`)}`, headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY }, allorigins: true },
+    { url: `https://corsproxy.io/?url=${encodeURIComponent(`https://v3.football.api-sports.io/${endpoint}?${qs}`)}`, headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY } },
+  ];
+  for (const {url, headers, allorigins} of urls) {
+    try {
+      const r = await fetch(url, { headers });
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (allorigins) {
+        const inner = JSON.parse(d.contents);
+        return inner.response;
+      }
+      return d.response;
+    } catch(e) { continue; }
+  }
+  return null;
 }
 
 // Fetch all fixtures with events
