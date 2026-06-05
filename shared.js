@@ -154,7 +154,8 @@ async function ghList(folder) {
 // ============================================================
 async function apiFootball(endpoint, params={}) {
   const qs = new URLSearchParams({league: CONFIG.WC_LEAGUE_ID, season: CONFIG.WC_SEASON, ...params});
-  const r = await fetch(`https://v3.football.api-sports.io/${endpoint}?${qs}`, {
+  const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(`https://v3.football.api-sports.io/${endpoint}?${qs}`)}`;
+  const r = await fetch(proxyUrl, {
     headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY }
   });
   if (!r.ok) return null;
