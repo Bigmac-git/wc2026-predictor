@@ -234,6 +234,24 @@ main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
 
 <script src="shared.js"></script>
 <script>
+const GIST_ID = 'ab198939037b472c9892104e0aff6674';
+async function loadKeysFromGist() {
+  try {
+    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`);
+    if (!r.ok) return;
+    const data = await r.json();
+    const file = data.files['wc2026-keys.json'];
+    if (!file) return;
+    const keys = JSON.parse(file.content);
+    if (keys.GITHUB_TOKEN)     CONFIG.GITHUB_TOKEN     = keys.GITHUB_TOKEN;
+    if (keys.API_FOOTBALL_KEY) CONFIG.API_FOOTBALL_KEY = keys.API_FOOTBALL_KEY;
+    CONFIG.GITHUB_USERNAME = 'Bigmac-git';
+    CONFIG.GITHUB_REPO     = 'wc2026-predictor';
+  } catch(e) { console.warn('Gist load failed:', e); }
+}
+loadKeysFromGist();
+</script>
+<script>
 // ============================================================
 //  GROUPS DATA
 // ============================================================
