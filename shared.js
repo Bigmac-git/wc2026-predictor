@@ -12,7 +12,7 @@ const CONFIG = {
   RESULTS_PATH:      'results.json',              // file in repo for live override results
 
   // --- API-Football (api-football.com) ---
-  API_FOOTBALL_KEY:  'YOUR_API_FOOTBALL_KEY',
+  API_FOOTBALL_KEY:  'fef4b48051b38c54dae041f485715198',
   WC_LEAGUE_ID:      1,                           // FIFA World Cup
   WC_SEASON:         2026,
 
