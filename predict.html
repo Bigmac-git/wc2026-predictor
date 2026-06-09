@@ -114,6 +114,14 @@ main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
   .awards-grid{grid-template-columns:1fr;}
   .match-row{grid-template-columns:1fr 44px 20px 44px 1fr;}
 }
+
+/* DROPDOWNS */
+.dropdown-wrap{position:relative;}
+.dd-input{width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:14px;padding:8px 32px 8px 12px;outline:none;transition:border-color .2s;appearance:none;-webkit-appearance:none;cursor:pointer;}
+.dd-input:focus{border-color:var(--gold);}
+.dd-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:12px;}
+.score-input{-moz-appearance:textfield;}
+.score-input::-webkit-outer-spin-button,.score-input::-webkit-inner-spin-button{-webkit-appearance:none;}
 </style>
 </head>
 <body>
@@ -167,43 +175,7 @@ main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
       <div class="step-desc">Individual award predictions. Big points available here!</div>
     </div>
 
-    <div class="awards-grid" style="margin-bottom:16px;">
-      <div class="award-field">
-        <span class="award-pts">7</span>
-        <span class="award-label">Golden Boot Winner</span>
-        <input class="award-input" id="golden_boot" placeholder="Player name...">
-      </div>
-      <div class="award-field">
-        <span class="award-pts">7</span>
-        <span class="award-label">Golden Glove Winner</span>
-        <input class="award-input" id="golden_glove" placeholder="Goalkeeper name...">
-      </div>
-      <div class="award-field">
-        <span class="award-pts">7</span>
-        <span class="award-label">Player of the Tournament</span>
-        <input class="award-input" id="player_tourney" placeholder="Player name...">
-      </div>
-      <div class="award-field">
-        <span class="award-pts">10</span>
-        <span class="award-label">Tournament Winner</span>
-        <input class="award-input" id="tournament_winner" placeholder="Country name...">
-      </div>
-      <div class="award-field">
-        <span class="award-pts">10</span>
-        <span class="award-label">Player to be Sent Off</span>
-        <input class="award-input" id="player_sent_off" placeholder="Player name...">
-      </div>
-      <div class="award-field">
-        <span class="award-pts">8</span>
-        <span class="award-label">Team to Lose on Penalties</span>
-        <input class="award-input" id="team_lose_pens" placeholder="Country name...">
-      </div>
-      <div class="award-field" style="grid-column:1/-1">
-        <span class="award-pts">10</span>
-        <span class="award-label">Player to Miss a Penalty (any stage)</span>
-        <input class="award-input" id="player_miss_pen" placeholder="Player name...">
-      </div>
-    </div>
+    <div class="awards-grid" style="margin-bottom:16px;" id="awardsGrid"></div>
 
     <div class="pitch-wrap">
       <div class="pitch-title">Team of the Tournament — 11 Players (3 pts each)</div>
@@ -233,6 +205,7 @@ main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
 <div class="toast" id="toast"></div>
 
 <script src="shared.js"></script>
+<script src="squads.js"></script>
 <script>
 // ============================================================
 //  GROUPS DATA
@@ -243,6 +216,125 @@ const TOTT_POSITIONS = [
   {pos:'MID', row:2},{pos:'MID',row:2},{pos:'MID',row:2},
   {pos:'ATT', row:3},{pos:'ATT',row:3},{pos:'ATT',row:3},
 ];
+
+// ============================================================
+//  DROPDOWN HELPERS
+// ============================================================
+function buildCountryDropdown(id, teams, placeholder) {
+  const opts = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+  return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
+}
+
+function buildPlayerDropdown(id, teams, placeholder) {
+  let opts = '';
+  teams.forEach(team => {
+    const players = SQUADS[team] || [];
+    if (players.length) {
+      opts += `<optgroup label="${team}">`;
+      players.forEach(p => { opts += `<option value="${p}">${p}</option>`; });
+      opts += '</optgroup>';
+    }
+  });
+  return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
+}
+
+function buildAllCountriesDropdown(id, placeholder) {
+  const opts = ALL_COUNTRIES.map(c => `<option value="${c}">${c}</option>`).join('');
+  return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
+}
+
+function buildAllPlayersDropdown(id, placeholder) {
+  let opts = '';
+  ALL_COUNTRIES.forEach(country => {
+    const players = SQUADS[country] || [];
+    if (players.length) {
+      opts += `<optgroup label="${country}">`;
+      players.forEach(p => { opts += `<option value="${p}">${p}</option>`; });
+      opts += '</optgroup>';
+    }
+  });
+  return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
+}
+
+function buildGoalkeeperDropdown(id, placeholder) {
+  // GKs are typically first in squad list
+  let opts = '';
+  ALL_COUNTRIES.forEach(country => {
+    const players = SQUADS[country] || [];
+    // Take first 3 as likely GKs
+    const gks = players.slice(0,3);
+    if (gks.length) {
+      opts += `<optgroup label="${country}">`;
+      gks.forEach(p => { opts += `<option value="${p}">${p}</option>`; });
+      opts += '</optgroup>';
+    }
+  });
+  return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
+}
+
+function buildAwardsSection() {
+  const grid = document.getElementById('awardsGrid');
+  if (!grid) return;
+  grid.innerHTML = `
+    <div class="award-field">
+      <span class="award-pts">7</span>
+      <span class="award-label">Golden Boot Winner</span>
+      <div class="dropdown-wrap">${buildAllPlayersDropdown('golden_boot','Select player...')}<span class="dd-arrow">▼</span></div>
+    </div>
+    <div class="award-field">
+      <span class="award-pts">7</span>
+      <span class="award-label">Golden Glove Winner</span>
+      <div class="dropdown-wrap">${buildGoalkeeperDropdown('golden_glove','Select goalkeeper...')}<span class="dd-arrow">▼</span></div>
+    </div>
+    <div class="award-field">
+      <span class="award-pts">7</span>
+      <span class="award-label">Player of the Tournament</span>
+      <div class="dropdown-wrap">${buildAllPlayersDropdown('player_tourney','Select player...')}<span class="dd-arrow">▼</span></div>
+    </div>
+    <div class="award-field">
+      <span class="award-pts">10</span>
+      <span class="award-label">Tournament Winner</span>
+      <div class="dropdown-wrap">${buildAllCountriesDropdown('tournament_winner','Select country...')}<span class="dd-arrow">▼</span></div>
+    </div>
+    <div class="award-field">
+      <span class="award-pts">10</span>
+      <span class="award-label">Player to be Sent Off</span>
+      <div class="dropdown-wrap">${buildAllPlayersDropdown('player_sent_off','Select player...')}<span class="dd-arrow">▼</span></div>
+    </div>
+    <div class="award-field">
+      <span class="award-pts">8</span>
+      <span class="award-label">Team to Lose on Penalties</span>
+      <div class="dropdown-wrap">${buildAllCountriesDropdown('team_lose_pens','Select country...')}<span class="dd-arrow">▼</span></div>
+    </div>
+    <div class="award-field" style="grid-column:1/-1">
+      <span class="award-pts">10</span>
+      <span class="award-label">Player to Miss a Penalty</span>
+      <div class="dropdown-wrap">${buildAllPlayersDropdown('player_miss_pen','Select player...')}<span class="dd-arrow">▼</span></div>
+    </div>
+  `;
+}
+
+function populateTottDropdowns() {
+  TOTT_POSITIONS.forEach((p, i) => {
+    const sel = document.getElementById(`tott_${i}`);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select player...</option>';
+    ALL_COUNTRIES.forEach(country => {
+      const players = SQUADS[country] || [];
+      if (players.length) {
+        const og = document.createElement('optgroup');
+        og.label = country;
+        players.forEach(player => {
+          const opt = document.createElement('option');
+          opt.value = player;
+          opt.textContent = player;
+          og.appendChild(opt);
+        });
+        sel.appendChild(og);
+      }
+    });
+  });
+}
 
 let currentStep = 0;
 const TOTAL_STEPS = 16; // 0=name, 1-12=groups, 13=knockout, 14=awards, 15=review
@@ -257,6 +349,13 @@ stepLabels.forEach((lbl, i) => {
   a.onclick = () => goStep(i);
   a.id = `pill-${i}`;
   nav.appendChild(a);
+});
+
+// Build awards and TOTT dropdowns after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  buildAwardsSection();
+  // TOTT populated after pitch is built
+  setTimeout(populateTottDropdowns, 100);
 });
 
 // ---- Build group steps ----
@@ -362,10 +461,12 @@ document.getElementById('knockoutForm').innerHTML =
     const rowDiv = document.createElement('div');
     rowDiv.className = 'pitch-row';
     row.forEach(p => {
-      rowDiv.innerHTML += `<div class="pitch-slot"><div class="pitch-pos">${p.pos}</div><input class="pitch-player-input" id="tott_${p.idx}" placeholder="Player..."></div>`;
+      rowDiv.innerHTML += `<div class="pitch-slot"><div class="pitch-pos">${p.pos}</div><div class="dropdown-wrap" style="margin-top:4px;"><select class="dd-input" style="font-size:12px;padding:4px 24px 4px 6px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.2);color:#fff;" id="tott_${p.idx}"><option value="">Select...</option></select><span class="dd-arrow" style="font-size:10px;">▼</span></div></div>`;
     });
     pitch.appendChild(rowDiv);
   });
+  // Populate player dropdowns
+  populateTottDropdowns();
 })();
 
 // ---- Step navigation ----
@@ -384,16 +485,19 @@ function goStep(n) {
 // ---- Collect all form data ----
 function collectData() {
   const data = { playerName: document.getElementById('playerName').value.trim(), submittedAt: new Date().toISOString() };
+  // Helper to get value from input or select
+  function val(id) { return document.getElementById(id)?.value?.trim() || ''; }
+
   // Groups
   GROUPS.forEach(g => {
     groupMatchups(g.teams).forEach(([,], mi) => {
-      const h = document.getElementById(`g${g.letter}_m${mi}_h`)?.value;
-      const a = document.getElementById(`g${g.letter}_m${mi}_a`)?.value;
+      const h = val(`g${g.letter}_m${mi}_h`);
+      const a = val(`g${g.letter}_m${mi}_a`);
       if (h !== '') data[`g${g.letter}_m${mi}_h`] = h;
       if (a !== '') data[`g${g.letter}_m${mi}_a`] = a;
     });
     ['topscorer','winner','carded','og','2nd','3rd'].forEach(field => {
-      const v = document.getElementById(`g${g.letter}_${field}`)?.value.trim();
+      const v = val(`g${g.letter}_${field}`);
       if (v) data[`g${g.letter}_${field}`] = v;
     });
   });
@@ -406,7 +510,7 @@ function collectData() {
   });
   // Awards
   ['golden_boot','golden_glove','player_tourney','tournament_winner','player_sent_off','team_lose_pens','player_miss_pen'].forEach(id => {
-    const v = document.getElementById(id)?.value.trim();
+    const v = val(id);
     if (v) data[id] = v;
   });
   // TOTT
