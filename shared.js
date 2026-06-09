@@ -33,12 +33,10 @@ const GIST_ID = 'ab198939037b472c9892104e0aff6674';
     const file = data.files['wc2026-keys.json'];
     if (!file) { console.warn('wc2026-keys.json not found in Gist'); return; }
     const keys = JSON.parse(file.content);
-    // Token stored in two halves to prevent GitHub secret scanning
-    if (keys.GHT_A && keys.GHT_B) CONFIG.GITHUB_TOKEN = keys.GHT_A + keys.GHT_B;
-    else if (keys.GITHUB_TOKEN)    CONFIG.GITHUB_TOKEN = keys.GITHUB_TOKEN;
     if (keys.API_FOOTBALL_KEY) CONFIG.API_FOOTBALL_KEY = keys.API_FOOTBALL_KEY;
-    CONFIG.GITHUB_USERNAME = 'Bigmac-git';
-    CONFIG.GITHUB_REPO     = 'wc2026-predictor';
+    if (keys.JSONBIN_MASTER_KEY) JSONBIN.MASTER_KEY = keys.JSONBIN_MASTER_KEY;
+    if (keys.JSONBIN_ACCESS_KEY) JSONBIN.ACCESS_KEY = keys.JSONBIN_ACCESS_KEY;
+    if (keys.JSONBIN_BIN_ID)     JSONBIN.BIN_ID     = keys.JSONBIN_BIN_ID;
     console.log('Keys loaded from Gist ✓');
   } catch(e) {
     console.warn('Could not load keys from Gist:', e.message);
@@ -150,28 +148,115 @@ const KNOCKOUT_FIXTURES = {
 };
 
 // ============================================================
-//  GITHUB HELPERS
+//  JSONBIN.IO HELPERS
+//  Free storage — no CORS issues, no token scanning problems
+//  Sign up free at jsonbin.io to get your keys
 // ============================================================
-async function ghGet(path) {
-  const url = `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/contents/${path}`;
-  const r = await fetch(url, { headers: { Authorization: `token ${CONFIG.GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json' }});
-  if (!r.ok) return null;
-  const data = await r.json();
-  return { content: JSON.parse(atob(data.content.replace(/\n/g,''))), sha: data.sha };
-}
 
-async function ghPut(path, content, sha, message) {
-  const url = `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/contents/${path}`;
-  const body = { message, content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))), ...(sha ? {sha} : {}) };
-  const r = await fetch(url, { method:'PUT', headers:{ Authorization:`token ${CONFIG.GITHUB_TOKEN}`, Accept:'application/vnd.github.v3+json','Content-Type':'application/json'}, body: JSON.stringify(body)});
-  return r.ok;
-}
+// JSONBin config — safe to be public (read-only key)
+const JSONBIN = {
+  BIN_ID:      '',          // Set after first run — see admin setup
+  MASTER_KEY:  '',          // Loaded from Gist (write access)
+  ACCESS_KEY:  '',          // Public read-only key — safe to embed
+  BASE_URL:    'https://api.jsonbin.io/v3'
+};
 
+// Load all submissions from JSONBin
 async function ghList(folder) {
-  const url = `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/contents/${folder}`;
-  const r = await fetch(url, { headers:{ Authorization:`token ${CONFIG.GITHUB_TOKEN}`, Accept:'application/vnd.github.v3+json'}});
-  if (!r.ok) return [];
-  return await r.json();
+  if (!JSONBIN.BIN_ID) return [];
+  try {
+    const r = await fetch(`${JSONBIN.BASE_URL}/b/${JSONBIN.BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN.MASTER_KEY }
+    });
+    if (!r.ok) return [];
+    const data = await r.json();
+    const subs = data.record?.submissions || {};
+    // Return as array of file-like objects
+    return Object.keys(subs).map(k => ({ name: k + '.json' }));
+  } catch(e) { return []; }
+}
+
+// Get a single submission
+async function ghGet(path) {
+  if (!JSONBIN.BIN_ID) return null;
+  try {
+    const r = await fetch(`${JSONBIN.BASE_URL}/b/${JSONBIN.BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN.MASTER_KEY }
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const subs = data.record?.submissions || {};
+    const name = path.replace('submissions/', '').replace('.json', '');
+    if (!subs[name]) return null;
+    return { content: subs[name], sha: null };
+  } catch(e) { return null; }
+}
+
+// Save a submission to JSONBin
+async function ghPut(path, content, sha, message) {
+  if (!JSONBIN.BIN_ID || !JSONBIN.MASTER_KEY) {
+    console.warn('JSONBin not configured');
+    return false;
+  }
+  try {
+    // First get current data
+    const r = await fetch(`${JSONBIN.BASE_URL}/b/${JSONBIN.BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN.MASTER_KEY }
+    });
+    const current = r.ok ? (await r.json()).record : { submissions: {} };
+    if (!current.submissions) current.submissions = {};
+    
+    // Add/update this submission
+    const name = path.replace('submissions/', '').replace('.json', '');
+    current.submissions[name] = content;
+    
+    // Save back
+    const w = await fetch(`${JSONBIN.BASE_URL}/b/${JSONBIN.BIN_ID}`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN.MASTER_KEY
+      },
+      body: JSON.stringify(current)
+    });
+    return w.ok;
+  } catch(e) { 
+    console.error('JSONBin save failed:', e);
+    return false; 
+  }
+}
+
+// Get all submissions as array (for leaderboard)
+async function getAllSubmissions() {
+  if (!JSONBIN.BIN_ID) return [];
+  try {
+    const key = JSONBIN.ACCESS_KEY || JSONBIN.MASTER_KEY;
+    const r = await fetch(`${JSONBIN.BASE_URL}/b/${JSONBIN.BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': key }
+    });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return Object.values(data.record?.submissions || {});
+  } catch(e) { return []; }
+}
+
+// Delete a submission
+async function deleteSubmission(name) {
+  if (!JSONBIN.BIN_ID || !JSONBIN.MASTER_KEY) return false;
+  try {
+    const r = await fetch(`${JSONBIN.BASE_URL}/b/${JSONBIN.BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN.MASTER_KEY }
+    });
+    if (!r.ok) return false;
+    const current = (await r.json()).record;
+    delete current.submissions[name];
+    const w = await fetch(`${JSONBIN.BASE_URL}/b/${JSONBIN.BIN_ID}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN.MASTER_KEY },
+      body: JSON.stringify(current)
+    });
+    return w.ok;
+  } catch(e) { return false; }
 }
 
 // ============================================================
