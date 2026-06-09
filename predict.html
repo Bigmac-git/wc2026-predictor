@@ -225,13 +225,13 @@ function buildCountryDropdown(id, teams, placeholder) {
   return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
 }
 
-function buildPlayerDropdown(id, teams, placeholder) {
+function buildPlayerDropdown(id, teams, placeholder, posFilter) {
   let opts = '';
   teams.forEach(team => {
-    const players = SQUADS[team] || [];
+    const players = (SQUADS[team] || []).filter(p => !posFilter || p[1] === posFilter);
     if (players.length) {
       opts += `<optgroup label="${team}">`;
-      players.forEach(p => { opts += `<option value="${p}">${p}</option>`; });
+      players.forEach(([name, pos]) => { opts += `<option value="${name}">${name}</option>`; });
       opts += '</optgroup>';
     }
   });
@@ -243,13 +243,13 @@ function buildAllCountriesDropdown(id, placeholder) {
   return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
 }
 
-function buildAllPlayersDropdown(id, placeholder) {
+function buildAllPlayersDropdown(id, placeholder, posFilter) {
   let opts = '';
   ALL_COUNTRIES.forEach(country => {
-    const players = SQUADS[country] || [];
+    const players = (SQUADS[country] || []).filter(p => !posFilter || p[1] === posFilter);
     if (players.length) {
       opts += `<optgroup label="${country}">`;
-      players.forEach(p => { opts += `<option value="${p}">${p}</option>`; });
+      players.forEach(([name, pos]) => { opts += `<option value="${name}">${name}</option>`; });
       opts += '</optgroup>';
     }
   });
@@ -257,19 +257,7 @@ function buildAllPlayersDropdown(id, placeholder) {
 }
 
 function buildGoalkeeperDropdown(id, placeholder) {
-  // GKs are typically first in squad list
-  let opts = '';
-  ALL_COUNTRIES.forEach(country => {
-    const players = SQUADS[country] || [];
-    // Take first 3 as likely GKs
-    const gks = players.slice(0,3);
-    if (gks.length) {
-      opts += `<optgroup label="${country}">`;
-      gks.forEach(p => { opts += `<option value="${p}">${p}</option>`; });
-      opts += '</optgroup>';
-    }
-  });
-  return `<select class="dd-input" id="${id}"><option value="">${placeholder}</option>${opts}</select>`;
+  return buildAllPlayersDropdown(id, placeholder, 'GK');
 }
 
 function buildAwardsSection() {
