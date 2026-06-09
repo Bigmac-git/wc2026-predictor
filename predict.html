@@ -567,16 +567,6 @@ async function submitPredictions() {
   if (!group.submissions) group.submissions = {};
   document.getElementById('groupTitle').textContent = group.name + ' · ' + code;
   document.title = group.name + ' — WC 2026 Predictor';
-  // Pre-fill name from email if known
-  const emailParam = new URLSearchParams(window.location.search).get('email');
-  if (emailParam) {
-    ensureKeys().then(() => getUser(emailParam)).then(user => {
-      if (user) {
-        const nameEl = document.getElementById('playerName');
-        if (nameEl && !nameEl.value) nameEl.value = user.name;
-      }
-    });
-  }
   if (group.locked) {
     const banner = document.createElement('div');
     banner.style.cssText = 'background:rgba(191,10,48,.15);border-bottom:1px solid #BF0A30;padding:10px 20px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:13px;letter-spacing:1px;color:#e06070;';
@@ -584,16 +574,35 @@ async function submitPredictions() {
     document.querySelector('header').after(banner);
   }
 
-  // Check URL for playerName param to pre-fill existing submission
-  const urlName = new URLSearchParams(window.location.search).get('edit');
-  if (urlName && group.submissions) {
-    const safeName = urlName.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  // Load existing submission for prefill
+  const emailParam = new URLSearchParams(window.location.search).get('email');
+  const editParam  = new URLSearchParams(window.location.search).get('edit');
+
+  if (emailParam) {
+    await ensureKeys();
+    const user = await getUser(emailParam);
+    if (user) {
+      const nameEl = document.getElementById('playerName');
+      if (nameEl && !nameEl.value) nameEl.value = user.name;
+      // Look up their submission by name
+      const safeName = user.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+      const existing = group.submissions?.[safeName];
+      if (existing) {
+        window._prefillData = existing;
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:rgba(200,168,75,.1);border-bottom:1px solid #C8A84B;padding:10px 20px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:13px;letter-spacing:1px;color:#C8A84B;';
+        banner.textContent = '✏️ Updating your existing predictions — submit again to save changes';
+        document.querySelector('header').after(banner);
+      }
+    }
+  } else if (editParam && group.submissions) {
+    const safeName = editParam.toLowerCase().replace(/[^a-z0-9]/g,'_');
     const existing = group.submissions[safeName];
     if (existing) {
-      prefillForm(existing);
+      window._prefillData = existing;
       const banner = document.createElement('div');
       banner.style.cssText = 'background:rgba(200,168,75,.1);border-bottom:1px solid #C8A84B;padding:10px 20px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:13px;letter-spacing:1px;color:#C8A84B;';
-      banner.textContent = '✏️ Editing existing predictions for ' + existing.playerName + ' — submit again to save changes';
+      banner.textContent = '✏️ Editing predictions for ' + existing.playerName + ' — submit again to save changes';
       document.querySelector('header').after(banner);
     }
   }
@@ -624,6 +633,5 @@ function showToast(msg, error=false) {
   if (!error) setTimeout(() => t.classList.remove('show'), 3500);
 }
 </script>
-<script src="prefill.js"></script>
 </body>
 </html>
