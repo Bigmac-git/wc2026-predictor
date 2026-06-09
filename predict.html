@@ -554,7 +554,8 @@ async function submitPredictions() {
 (async function init() {
   const code = new URLSearchParams(window.location.search).get('code');
   if (!code) {
-    document.getElementById('groupTitle').textContent = 'No group code — go back to home';
+    document.getElementById('groupTitle').textContent = 'No group code — redirecting…';
+    setTimeout(() => window.location.href = 'index.html', 1500);
     return;
   }
   const group = await getGroup(code);
