@@ -262,14 +262,14 @@ main{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
         <div class="card-header"><span class="card-title">GitHub Repo Setup Instructions</span></div>
         <div class="card-body" style="font-size:13px;color:var(--muted);line-height:1.8;">
           <ol style="padding-left:20px;">
-            <li>Create a <strong style="color:var(--text)">public GitHub repository</strong> (e.g. <code>wc2026-predictor</code>)</li>
-            <li>Create a folder called <code>submissions/</code> in the repo (add a <code>.gitkeep</code> file inside)</li>
-            <li>Upload all 3 HTML files + <code>shared.js</code> to the repo root</li>
-            <li>Go to <strong style="color:var(--text)">github.com/settings/tokens</strong> → Generate new token → select <strong>repo</strong> scope</li>
-            <li>Paste the token into CONFIG.GITHUB_TOKEN in <code>shared.js</code></li>
-            <li>Sign up at <strong style="color:var(--text)">api-football.com</strong> → free account → copy your API key into CONFIG.API_FOOTBALL_KEY</li>
-            <li>Enable GitHub Pages on the repo (Settings → Pages → Deploy from branch → main) to get a public URL</li>
-            <li>Share the <code>predict.html</code> URL with all players!</li>
+            <li>Sign up free at <strong style="color:var(--text)">jsonbin.io</strong></li>
+            <li>Create a new bin with content: <code>{"submissions":{}}</code></li>
+            <li>Copy your <strong>Bin ID</strong> and <strong>Master Key</strong> from the dashboard</li>
+            <li>Update your secret Gist (<strong style="color:var(--text)">gist.github.com</strong>) to include:<br>
+              <code style="display:block;margin-top:6px;padding:8px;background:rgba(0,0,0,.3);font-size:11px;">{<br>&nbsp;&nbsp;"JSONBIN_BIN_ID": "your-bin-id",<br>&nbsp;&nbsp;"JSONBIN_MASTER_KEY": "$2a$...",<br>&nbsp;&nbsp;"API_FOOTBALL_KEY": "your-key"<br>}</code>
+            </li>
+            <li>Refresh admin and the JSONBin dot should go green!</li>
+            <li>Share <code>predict.html</code> with all players!</li>
           </ol>
         </div>
       </div>
@@ -330,33 +330,30 @@ async function initAdmin() {
 
 async function loadOverview() {
   try {
-    const [fixtures, files] = await Promise.all([
+    const [fixtures, submissions] = await Promise.all([
       fetchAllFixtures(),
-      ghList(CONFIG.SUBMISSIONS_PATH)
+      getAllSubmissions()
     ]);
     const finished = fixtures?.filter(f => f.fixture.status.short === 'FT').length || 0;
     const live = fixtures?.filter(f => ['LIVE','1H','2H','HT'].includes(f.fixture.status.short)).length || 0;
-    const players = files?.filter(f => f.name.endsWith('.json')).length || 0;
+    const players = submissions?.length || 0;
 
     document.getElementById('st-players').textContent = players;
     document.getElementById('st-matches').textContent = finished;
     document.getElementById('st-live').textContent = live;
 
-    // API status
     const apiOk = fixtures && fixtures.length > 0;
-    const ghOk  = files !== null;
+    const binOk = JSONBIN.BIN_ID && JSONBIN.MASTER_KEY;
     document.getElementById('apiStatus').innerHTML = `
-      <div class="api-row"><div class="dot ${apiOk?'ok':'err'}"></div><div class="api-name">API-Football</div><div class="api-detail">${apiOk ? `✓ ${fixtures.length} fixtures loaded` : '✗ Check API key in shared.js'}</div></div>
-      <div class="api-row"><div class="dot ${ghOk?'ok':'err'}"></div><div class="api-name">GitHub (submissions)</div><div class="api-detail">${ghOk ? `✓ ${players} submissions found` : '✗ Check GitHub token & repo in shared.js'}</div></div>
+      <div class="api-row"><div class="dot ${apiOk?'ok':'err'}"></div><div class="api-name">API-Football</div><div class="api-detail">${apiOk ? `✓ ${fixtures.length} fixtures loaded` : '✗ Check API-Football key in Gist'}</div></div>
+      <div class="api-row"><div class="dot ${binOk?'ok':'err'}"></div><div class="api-name">JSONBin (submissions)</div><div class="api-detail">${binOk ? `✓ ${players} submissions found` : '✗ Add JSONBIN keys to Gist — see Config tab'}</div></div>
     `;
 
-    // Recent submissions
-    if (files && files.length) {
-      const sorted = files.filter(f => f.name.endsWith('.json')).sort((a,b) => b.name.localeCompare(a.name)).slice(0,5);
-      document.getElementById('recentActivity').innerHTML = sorted.map(f => `
+    if (submissions && submissions.length) {
+      document.getElementById('recentActivity').innerHTML = submissions.slice(-5).reverse().map(s => `
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;">${f.name.replace('.json','').replace(/_/g,' ')}</span>
-          <span style="color:var(--muted);">Submitted</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;">${s.playerName || 'Unknown'}</span>
+          <span style="color:var(--muted);">${s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-GB') : 'Submitted'}</span>
         </div>`).join('');
     } else {
       document.getElementById('recentActivity').textContent = 'No submissions yet.';
@@ -370,16 +367,16 @@ async function loadSubmissions() {
   const tbody = document.getElementById('subTableBody');
   tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:16px;">Loading…</td></tr>';
   try {
-    const files = await ghList(CONFIG.SUBMISSIONS_PATH);
-    if (!files || files.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:16px;">No submissions yet.</td></tr>'; return; }
-    const jsonFiles = files.filter(f => f.name.endsWith('.json'));
+    const submissions = await getAllSubmissions();
+    if (!submissions || submissions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:16px;">No submissions yet. Share the predict.html link!</td></tr>';
+      return;
+    }
     tbody.innerHTML = '';
-    for (const file of jsonFiles) {
-      const sub = await ghGet(`${CONFIG.SUBMISSIONS_PATH}/${file.name}`);
-      const pred = sub?.content || {};
-      const name = pred.playerName || file.name.replace('.json','').replace(/_/g,' ');
+    submissions.forEach(pred => {
+      const name = pred.playerName || 'Unknown';
+      const safeName = name.toLowerCase().replace(/[^a-z0-9]/g,'_');
       const submitted = pred.submittedAt ? new Date(pred.submittedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : 'Unknown';
-      // Count filled predictions
       const filled = Object.keys(pred).filter(k => pred[k] && k !== 'playerName' && k !== 'submittedAt' && k !== 'tott').length;
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -387,15 +384,41 @@ async function loadSubmissions() {
         <td style="color:var(--muted);">${submitted}</td>
         <td><span class="badge-sub ${filled>50?'badge-ok':'badge-late'}">${filled} fields</span></td>
         <td style="display:flex;gap:6px;">
-          <button class="action-btn view" onclick="viewSub('${file.name}','${name}')">View</button>
-          <button class="action-btn" onclick="deleteSub('${file.name}','${name}')">Delete</button>
+          <button class="action-btn view" onclick="viewSubData('${safeName}')">View</button>
+          <button class="action-btn" onclick="deleteSubData('${safeName}','${name}')">Delete</button>
         </td>`;
       tbody.appendChild(tr);
-    }
-    document.getElementById('st-players').textContent = jsonFiles.length;
+    });
+    document.getElementById('st-players').textContent = submissions.length;
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="4" style="color:var(--red);">Error: ${e.message}</td></tr>`;
   }
+}
+
+async function viewSubData(safeName) {
+  const submissions = await getAllSubmissions();
+  const pred = submissions?.find(s => (s.playerName||'').toLowerCase().replace(/[^a-z0-9]/g,'_') === safeName);
+  if (!pred) { showToast('Could not find submission', true); return; }
+  document.getElementById('modalTitle').textContent = pred.playerName;
+  let html = '<div class="pred-view-grid">';
+  const labels = { golden_boot:'Golden Boot', golden_glove:'Golden Glove', player_tourney:'Player of Tournament', tournament_winner:'Tournament Winner', player_sent_off:'Sent Off', team_lose_pens:'Lose on Pens', player_miss_pen:'Miss Pen' };
+  Object.entries(labels).forEach(([k,lbl]) => {
+    if (pred[k]) html += `<div class="pred-view-item"><div class="pred-view-key">${lbl}</div><div class="pred-view-val">${pred[k]}</div></div>`;
+  });
+  html += '</div><div style="margin-top:16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Group Winners</div><div class="pred-view-grid">';
+  GROUPS.forEach(g => {
+    if (pred[`g${g.letter}_winner`]) html += `<div class="pred-view-item"><div class="pred-view-key">Grp ${g.letter}</div><div class="pred-view-val">${pred[`g${g.letter}_winner`]}</div></div>`;
+  });
+  html += '</div>';
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('subModal').classList.add('open');
+}
+
+async function deleteSubData(safeName, name) {
+  if (!confirm(`Delete submission for ${name}?`)) return;
+  const ok = await deleteSubmission(safeName);
+  if (ok) { showToast(`${name} deleted`); loadSubmissions(); }
+  else showToast('Delete failed — check JSONBin config', true);
 }
 
 async function viewSub(filename, name) {
