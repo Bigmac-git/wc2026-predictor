@@ -405,7 +405,7 @@ async function viewSubData(safeName) {
   Object.entries(labels).forEach(([k,lbl]) => {
     if (pred[k]) html += `<div class="pred-view-item"><div class="pred-view-key">${lbl}</div><div class="pred-view-val">${pred[k]}</div></div>`;
   });
-  html += '</div><div style="margin-top:16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Group Winners</div><div class="pred-view-grid">';
+  html += '</div><div style="margin-top:16px;font-family:Barlow Condensed,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Group Winners</div><div class="pred-view-grid">';
   GROUPS.forEach(g => {
     if (pred[`g${g.letter}_winner`]) html += `<div class="pred-view-item"><div class="pred-view-key">Grp ${g.letter}</div><div class="pred-view-val">${pred[`g${g.letter}_winner`]}</div></div>`;
   });
