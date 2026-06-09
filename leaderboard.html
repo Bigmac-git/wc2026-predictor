@@ -259,8 +259,11 @@ async function loadAll() {
       if (_sess?.email) {
         const _u = await getUser(_sess.email);
         if (_u) {
+          // Check submissions directly from group data
+          const _grp = await getGroup(code);
           const _safe = _u.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
-          const _has = scored.some(s => s.name.toLowerCase().replace(/[^a-z0-9]/g,'_') === _safe);
+          const _has = _grp?.submissions?.[_safe] !== undefined;
+          console.log('User:', _u.name, 'safeName:', _safe, 'hasSubmission:', _has, 'submissions:', Object.keys(_grp?.submissions||{}));
           const btnSubmit = document.getElementById('navPredict');
           const btnEdit   = document.getElementById('navEdit');
           if (btnSubmit && btnEdit) {
@@ -275,7 +278,7 @@ async function loadAll() {
           }
         }
       }
-    } catch(e) {}
+    } catch(e) { console.log('Button check error:', e); }
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('leaderboardContent').style.display = 'block';
