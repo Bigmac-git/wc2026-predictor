@@ -434,16 +434,14 @@ async function submitPredictions() {
 
   showToast('Saving your predictions…');
   const safeName = data.playerName.toLowerCase().replace(/[^a-z0-9]/g,'_');
-  const path = `${CONFIG.SUBMISSIONS_PATH}/${safeName}.json`;
 
   try {
-    const existing = await ghGet(path);
-    const ok = await ghPut(path, data, existing?.sha, `Prediction: ${data.playerName}`);
+    const ok = await ghPut(`submissions/${safeName}.json`, data, null, `Prediction: ${data.playerName}`);
     if (ok) {
       showToast('🏆 Predictions saved! Good luck!');
       setTimeout(() => window.location.href = 'leaderboard.html', 2500);
     } else {
-      showToast('Save failed — check your config settings', true);
+      showToast('Save failed — JSONBin not configured yet', true);
     }
   } catch(e) {
     showToast('Error: ' + e.message, true);
