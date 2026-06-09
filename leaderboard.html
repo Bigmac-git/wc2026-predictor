@@ -253,6 +253,30 @@ async function loadAll() {
     renderPodium(scored);
     renderTable(scored);
 
+    // Show Edit vs Submit button based on whether logged-in user has submitted
+    try {
+      const _sess = SESSION.get();
+      if (_sess?.email) {
+        const _u = await getUser(_sess.email);
+        if (_u) {
+          const _safe = _u.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+          const _has = scored.some(s => s.name.toLowerCase().replace(/[^a-z0-9]/g,'_') === _safe);
+          const btnSubmit = document.getElementById('navPredict');
+          const btnEdit   = document.getElementById('navEdit');
+          if (btnSubmit && btnEdit) {
+            if (_has) {
+              btnSubmit.style.display = 'none';
+              btnEdit.style.display   = 'inline-block';
+              btnEdit.href = `predict.html?code=${code}&email=${encodeURIComponent(_sess.email)}`;
+            } else {
+              btnSubmit.style.display = 'inline-block';
+              btnEdit.style.display   = 'none';
+            }
+          }
+        }
+      }
+    } catch(e) {}
+
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('leaderboardContent').style.display = 'block';
 
@@ -370,8 +394,13 @@ function toggleDetail(i) {
 const _code = new URLSearchParams(window.location.search).get('code');
 if (_code) {
   document.getElementById('navLeaderboard').href = `leaderboard.html?code=${_code}`;
-  document.getElementById('navPredict').href     = `predict.html?code=${_code}`;
-  // navAdmin always goes to index.html
+  // Set predict link with email if logged in
+  const _sess = SESSION.get();
+  if (_sess?.email) {
+    document.getElementById('navPredict').href = `predict.html?code=${_code}&email=${encodeURIComponent(_sess.email)}`;
+  } else {
+    document.getElementById('navPredict').href = `predict.html?code=${_code}`;
+  }
 }
 
 // Auto-refresh every 5 minutes
