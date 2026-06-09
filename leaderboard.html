@@ -133,7 +133,12 @@ main{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
 <header>
   <div class="badge">Live Leaderboard</div>
   <h1>WC 2026<br><span>PREDICTOR</span></h1>
-  <div class="header-meta"><span class="meta-item"><span class="live-dot"></span>Live Scoring</span></div>
+  <div class="header-meta">
+    <span class="meta-item"><span class="live-dot"></span>Live Scoring</span>
+    <span class="meta-item" id="playerCount">— Players</span>
+    <span class="meta-item" id="matchesScored">— Matches</span>
+    <span class="meta-item" id="lastRefresh">—</span>
+  </div>
 </header>
 
 <nav class="top-nav">
@@ -205,15 +210,19 @@ async function loadAll() {
     };
 
     const finishedCount = liveData.fixtures.filter(f => f.fixture.status.short === 'FT').length;
-    document.getElementById('matchesScored').textContent = `${finishedCount}/104 Matches`;
+    const msEl = document.getElementById('matchesScored'); if(msEl) msEl.textContent = `${finishedCount}/104 Matches`;
     buildTicker(liveData.fixtures);
 
     setLoadStatus('Loading submissions…');
     const code = new URLSearchParams(window.location.search).get('code');
-    if (!code) { setLoadStatus('No group code in URL — go back to home page'); return; }
+    if (!code) {
+      setLoadStatus('No group code — redirecting to home…');
+      setTimeout(() => window.location.href = 'index.html', 2000);
+      return;
+    }
     const group = await getGroup(code);
     if (!group) { setLoadStatus('Group not found'); return; }
-    document.getElementById('groupTitle').textContent = group.name + ' · ' + code;
+    const gtEl = document.getElementById('groupTitle'); if(gtEl) gtEl.textContent = group.name + ' · ' + code;
     document.title = group.name + ' — Leaderboard';
 
     const submissions = await getSubmissions(code);
@@ -235,10 +244,10 @@ async function loadAll() {
     scored.sort((a,b) => b.total - a.total);
     allScored = scored;
 
-    document.getElementById('playerCount').textContent = `${scored.length} Players`;
-    document.getElementById('statusText').textContent = `${scored.length} entries scored against ${finishedCount} finished matches`;
-    document.getElementById('lastRefresh').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
-    document.getElementById('lastUpdated').textContent = `Last refreshed: ${new Date().toLocaleString()}`;
+    const pcEl = document.getElementById('playerCount'); if(pcEl) pcEl.textContent = `${scored.length} Players`;
+    const stEl = document.getElementById('statusText'); if(stEl) stEl.textContent = `${scored.length} entries scored against ${finishedCount} finished matches`;
+    const lrEl = document.getElementById('lastRefresh'); if(lrEl) lrEl.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+    const luEl = document.getElementById('lastUpdated'); if(luEl) luEl.textContent = `Last refreshed: ${new Date().toLocaleString()}`;
 
     renderPodium(scored);
     renderTable(scored);
