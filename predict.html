@@ -130,7 +130,7 @@ main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
 <header>
   <div class="badge">FIFA World Cup 2026</div>
   <h1>ENTER YOUR<br><span>PREDICTIONS</span></h1>
-  <div class="subtitle">K. Led Prediction League — Fill in every section to submit</div>
+  <div class="subtitle" id="groupTitle">Loading group…</div>
 </header>
 
 <nav class="step-nav" id="stepNav"></nav>
@@ -542,22 +542,46 @@ function buildReview() {
 async function submitPredictions() {
   const data = collectData();
   if (!data.playerName) { showToast('Please enter your name first!', true); goStep(0); return; }
+  const code = new URLSearchParams(window.location.search).get('code');
+  if (!code) { showToast('No group code — go back to the home page', true); return; }
+  const locked = await isGroupLocked(code);
+  if (locked) { showToast('⛔ Submissions are locked — the deadline has passed', true); return; }
 
   showToast('Saving your predictions…');
-  const safeName = data.playerName.toLowerCase().replace(/[^a-z0-9]/g,'_');
-
   try {
-    const ok = await ghPut(`submissions/${safeName}.json`, data, null, `Prediction: ${data.playerName}`);
+    const ok = await saveSubmission(code, data.playerName, data);
     if (ok) {
       showToast('🏆 Predictions saved! Good luck!');
-      setTimeout(() => window.location.href = 'leaderboard.html', 2500);
+      setTimeout(() => window.location.href = `leaderboard.html?code=${code}`, 2500);
     } else {
-      showToast('Save failed — JSONBin not configured yet', true);
+      showToast('Save failed — check your connection', true);
     }
   } catch(e) {
     showToast('Error: ' + e.message, true);
   }
 }
+
+// Init — load group info from URL
+(async function init() {
+  const code = new URLSearchParams(window.location.search).get('code');
+  if (!code) {
+    document.getElementById('groupTitle').textContent = 'No group code — go back to home';
+    return;
+  }
+  const group = await getGroup(code);
+  if (!group) {
+    document.getElementById('groupTitle').textContent = 'Group not found — check your code';
+    return;
+  }
+  document.getElementById('groupTitle').textContent = group.name + ' · ' + code;
+  document.title = group.name + ' — WC 2026 Predictor';
+  if (group.locked) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(191,10,48,.15);border-bottom:1px solid #BF0A30;padding:10px 20px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:13px;letter-spacing:1px;color:#e06070;';
+    banner.textContent = '🔒 Submissions are locked — the deadline has passed. Contact your group admin.';
+    document.querySelector('header').after(banner);
+  }
+})();
 
 function showToast(msg, error=false) {
   const t = document.getElementById('toast');
