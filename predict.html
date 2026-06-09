@@ -563,6 +563,8 @@ async function submitPredictions() {
     document.getElementById('groupTitle').textContent = 'Group not found — check your code';
     return;
   }
+  // Ensure submissions are loaded
+  if (!group.submissions) group.submissions = {};
   document.getElementById('groupTitle').textContent = group.name + ' · ' + code;
   document.title = group.name + ' — WC 2026 Predictor';
   // Pre-fill name from email if known
