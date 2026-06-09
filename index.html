@@ -10,14 +10,14 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;
   background-image:radial-gradient(ellipse at 15% 0%,rgba(0,104,71,.2) 0%,transparent 55%),radial-gradient(ellipse at 85% 100%,rgba(200,168,75,.1) 0%,transparent 50%);}
-header{text-align:center;padding:40px 20px 28px;position:relative;overflow:hidden;}
+header{text-align:center;padding:40px 24px 28px;position:relative;overflow:hidden;}
 header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(0,104,71,.06) 59px,rgba(0,104,71,.06) 60px);}
 .badge{display:inline-block;background:var(--gold);color:#000;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;padding:4px 14px;margin-bottom:12px;}
 h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(38px,8vw,72px);letter-spacing:4px;line-height:.9;color:#fff;text-shadow:0 0 60px rgba(200,168,75,.25);}
 h1 span{color:var(--gold);}
 .tagline{margin-top:12px;font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
 
-main{max-width:520px;margin:0 auto;padding:16px 16px 80px;}
+main{max-width:520px;margin:0 auto;padding:16px 20px 80px;}
 
 /* PANELS */
 .panel{display:none;animation:fadeIn .3s ease;}
@@ -173,7 +173,6 @@ main{max-width:520px;margin:0 auto;padding:16px 16px 80px;}
       <div class="auth-title">Create a Group</div>
       <div class="auth-desc">Set up your prediction league. You'll get a unique code to share.</div>
       <div class="field"><label>Group Name</label><input type="text" id="createName" placeholder="e.g. Work Predictions 2026" maxlength="30"></div>
-      <div class="field"><label>Admin Password</label><input type="password" id="createPassword" placeholder="To manage your group"></div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="showPanel('panelDashboard')">← Back</button>
         <button class="btn btn-gold" onclick="doCreateGroup()">Create</button>
@@ -328,9 +327,10 @@ async function renderGroups() {
 // ---- CREATE GROUP ----
 async function doCreateGroup() {
   const name = document.getElementById('createName').value.trim();
-  const pw   = document.getElementById('createPassword').value.trim();
-  if (!name||!pw) { showErr('createErr','Please fill in all fields'); return; }
+  if (!name) { showErr('createErr','Please enter a group name'); return; }
   showPanel('panelLoading');
+  // Generate a random admin password — not needed for account-based access
+  const pw = Math.random().toString(36).slice(2,10);
   let code = generateGroupCode(name);
   const existing = await getAllGroups();
   while (existing[code]) { code = generateGroupCode(name); }
