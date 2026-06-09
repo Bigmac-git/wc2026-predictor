@@ -456,7 +456,7 @@ document.getElementById('knockoutForm').innerHTML =
     const rowDiv = document.createElement('div');
     rowDiv.className = 'pitch-row';
     row.forEach(p => {
-      rowDiv.innerHTML += `<div class="pitch-slot"><div class="pitch-pos">${p.pos}</div><div class="dropdown-wrap" style="margin-top:4px;"><select class="dd-input" style="font-size:12px;padding:4px 24px 4px 6px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.2);color:#fff;" id="tott_${p.idx}"><option value="">Select...</option></select><span class="dd-arrow" style="font-size:10px;">▼</span></div></div>`;
+      rowDiv.innerHTML += `<div class="pitch-slot"><div class="pitch-pos">${p.pos}</div><div class="dropdown-wrap" style="margin-top:4px;"><select class="dd-input" style="font-size:12px;padding:4px 24px 4px 6px;background:var(--input-bg);border:1px solid rgba(255,255,255,.2);color:#fff;width:100%;" id="tott_${p.idx}"><option value="">Select...</option></select><span class="dd-arrow" style="font-size:10px;">▼</span></div></div>`;
     });
     pitch.appendChild(rowDiv);
   });
