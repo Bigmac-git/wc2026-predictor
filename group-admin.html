@@ -188,7 +188,7 @@ main{max-width:1000px;margin:0 auto;padding:28px 20px 80px;}
         <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);">Members & Standings</span>
         <button class="hbtn" onclick="loadMembers()">↻ Refresh</button>
       </div>
-      <table class="members-table">
+      <div style="overflow-x:auto;"><table class="members-table" style="min-width:500px;">
         <thead>
           <tr>
             <th>#</th>
@@ -279,18 +279,20 @@ function initPanel() {
   updateLockUI();
 
   // Invite message
+  const homeUrl = `${base}/index.html`;
   document.getElementById('inviteMsg').textContent =
 `🏆 WC 2026 Predictor — ${currentGroup.name}
 
 You've been invited to join our World Cup 2026 prediction league!
 
-👉 Submit your predictions here:
-${predictUrl}
-
-🏆 Watch the live leaderboard here:
-${leaderboardUrl}
+👉 Register & submit your predictions here:
+${homeUrl}
 
 Your group code: ${currentCode}
+(Enter this after registering to join the group)
+
+🏆 Live leaderboard:
+${leaderboardUrl}
 
 Good luck! ⚽`;
 
@@ -362,9 +364,11 @@ async function loadMembers() {
       <td style="color:var(--muted);font-size:12px;">${submitted}</td>
       <td><span class="pts-num">${s.pts}</span></td>
       <td><span class="status-badge status-ok">Submitted</span></td>
-      <td style="display:flex;gap:6px;">
-        <a class="del-btn" style="text-decoration:none;text-align:center;" href="#" onclick="copyEditLink('${safeName}','${s.playerName}');return false;">Edit Link</a>
-        <button class="del-btn" onclick="deleteMember('${safeName}','${s.playerName}')">Remove</button>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="del-btn view" onclick="copyEditLink('${safeName}','${s.playerName}')">Edit Link</button>
+          <button class="del-btn" onclick="deleteMember('${safeName}','${s.playerName}')">Remove</button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -373,9 +377,18 @@ async function loadMembers() {
 
 async function deleteMember(safeName, name) {
   if (!confirm(`Remove ${name}'s submission? This cannot be undone.`)) return;
-  const ok = await deleteSubmission(currentCode, safeName);
-  if (ok) { showToast(`${name} removed`); loadMembers(); }
-  else showToast('Failed to remove — check connection', true);
+  showToast('Removing...');
+  try {
+    const ok = await deleteSubmission(currentCode, safeName);
+    if (ok) { 
+      showToast(`${name} removed`);
+      setTimeout(() => loadMembers(), 500);
+    } else {
+      showToast('Failed to remove — check connection', true);
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
 }
 
 function copyEditLink(safeName, playerName) {
