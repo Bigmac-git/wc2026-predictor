@@ -372,11 +372,11 @@ async function addUserToGroup(email, groupCode, isAdmin=false) {
   return await binPut(db);
 }
 
-// Simple session storage (survives page navigation, clears on browser close)
+// Session storage using localStorage (persists across tabs and page loads)
 const SESSION = {
-  set(user) { sessionStorage.setItem('wc_user', JSON.stringify(user)); },
-  get() { try { return JSON.parse(sessionStorage.getItem('wc_user')); } catch { return null; } },
-  clear() { sessionStorage.removeItem('wc_user'); },
+  set(user) { try { localStorage.setItem('wc_user', JSON.stringify(user)); } catch(e) {} },
+  get() { try { return JSON.parse(localStorage.getItem('wc_user')); } catch { return null; } },
+  clear() { try { localStorage.removeItem('wc_user'); } catch(e) {} },
 };
 
 // Lock/unlock group submissions
