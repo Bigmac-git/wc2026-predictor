@@ -405,7 +405,7 @@ async function viewSubData(safeName) {
   Object.entries(labels).forEach(([k,lbl]) => {
     if (pred[k]) html += `<div class="pred-view-item"><div class="pred-view-key">${lbl}</div><div class="pred-view-val">${pred[k]}</div></div>`;
   });
-  html += '</div><div style="margin-top:16px;font-family:Barlow Condensed,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Group Winners</div><div class="pred-view-grid">';
+  html += `</div><div style="margin-top:16px;font-family:Barlow Condensed,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Group Winners</div><div class="pred-view-grid">`;
   GROUPS.forEach(g => {
     if (pred[`g${g.letter}_winner`]) html += `<div class="pred-view-item"><div class="pred-view-key">Grp ${g.letter}</div><div class="pred-view-val">${pred[`g${g.letter}_winner`]}</div></div>`;
   });
@@ -441,8 +441,8 @@ async function viewSub(filename, name) {
   });
   html += '</div>';
   if (pred.tott && pred.tott.length) {
-    html += '<div style="margin-top:16px;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Team of the Tournament</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-    pred.tott.forEach(p => { if(p.player) html += `<span style="background:rgba(0,104,71,.3);padding:4px 10px;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;">${p.pos}: ${p.player}</span>`; });
+    html += `<div style="margin-top:16px;font-family:Barlow Condensed,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Team of the Tournament</div><div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+    pred.tott.forEach(p => { if(p.player) html += `<span style="background:rgba(0,104,71,.3);padding:4px 10px;font-family:Barlow Condensed,sans-serif;font-size:13px;">${p.pos}: ${p.player}</span>`; });
     html += '</div>';
   }
   document.getElementById('modalBody').innerHTML = html;
