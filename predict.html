@@ -192,12 +192,12 @@ main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
   <div class="step" id="step-15">
     <div class="step-header">
       <div class="step-title">Review &amp; Submit</div>
-      <div class="step-desc">Check everything looks right then hit submit. You'll receive a confirmation when saved.</div>
+      <div class="step-desc">Check everything looks right then hit submit. You can come back and re-submit at any time before each stage deadline — your latest submission always replaces the previous one.</div>
     </div>
     <div id="reviewPanel"></div>
     <div class="nav-btns">
       <button class="btn btn-back" onclick="goStep(14)">← Back</button>
-      <button class="btn btn-submit" onclick="submitPredictions()">🏆 Submit Predictions</button>
+      <button class="btn btn-submit" onclick="submitPredictions()" id="submitBtn">🏆 Submit Predictions</button>
     </div>
   </div>
 </main>
@@ -530,6 +530,7 @@ function buildReview() {
 async function submitPredictions() {
   const data = collectData();
   if (!data.playerName) { showToast('Please enter your name first!', true); goStep(0); return; }
+  // Partial submissions are allowed — players can re-submit to update
   const code = new URLSearchParams(window.location.search).get('code');
   if (!code) { showToast('No group code — go back to the home page', true); return; }
   const locked = await isGroupLocked(code);
@@ -549,7 +550,7 @@ async function submitPredictions() {
   }
 }
 
-// Init — load group info from URL
+// Init — load group info and pre-fill if player already submitted
 (async function init() {
   const code = new URLSearchParams(window.location.search).get('code');
   if (!code) {
@@ -569,7 +570,39 @@ async function submitPredictions() {
     banner.textContent = '🔒 Submissions are locked — the deadline has passed. Contact your group admin.';
     document.querySelector('header').after(banner);
   }
+
+  // Check URL for playerName param to pre-fill existing submission
+  const urlName = new URLSearchParams(window.location.search).get('edit');
+  if (urlName && group.submissions) {
+    const safeName = urlName.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    const existing = group.submissions[safeName];
+    if (existing) {
+      prefillForm(existing);
+      const banner = document.createElement('div');
+      banner.style.cssText = 'background:rgba(200,168,75,.1);border-bottom:1px solid #C8A84B;padding:10px 20px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:13px;letter-spacing:1px;color:#C8A84B;';
+      banner.textContent = '✏️ Editing existing predictions for ' + existing.playerName + ' — submit again to save changes';
+      document.querySelector('header').after(banner);
+    }
+  }
 })();
+
+function prefillForm(data) {
+  // Name
+  const nameEl = document.getElementById('playerName');
+  if (nameEl && data.playerName) nameEl.value = data.playerName;
+  // Set all select/input values
+  Object.keys(data).forEach(key => {
+    const el = document.getElementById(key);
+    if (el && data[key]) el.value = data[key];
+  });
+  // TOTT
+  if (data.tott && Array.isArray(data.tott)) {
+    data.tott.forEach((p, i) => {
+      const el = document.getElementById('tott_' + i);
+      if (el && p.player) el.value = p.player;
+    });
+  }
+}
 
 function showToast(msg, error=false) {
   const t = document.getElementById('toast');
