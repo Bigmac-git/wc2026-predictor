@@ -51,7 +51,10 @@ async function binGet() {
   });
   if (!r.ok) return null;
   const d = await r.json();
-  return d.record || { groups: {} };
+  const rec = d.record || {};
+  if (!rec.groups) rec.groups = {};
+  if (!rec.users)  rec.users  = {};
+  return rec;
 }
 
 async function binPut(data) {
@@ -324,6 +327,57 @@ function scoreSubmission(prediction, liveData) {
 
   return {total, breakdown, detail};
 }
+
+// ============================================================
+//  USER MANAGEMENT
+// ============================================================
+async function getUser(email) {
+  const db = await binGet();
+  return db?.users?.[email.toLowerCase()] || null;
+}
+
+async function saveUser(email, userData) {
+  const db = await binGet() || { groups: {}, users: {} };
+  if (!db.users) db.users = {};
+  db.users[email.toLowerCase()] = userData;
+  return await binPut(db);
+}
+
+async function registerUser(email, password, name) {
+  const db = await binGet() || { groups: {}, users: {} };
+  if (!db.users) db.users = {};
+  const key = email.toLowerCase();
+  if (db.users[key]) return { success: false, error: 'Email already registered' };
+  db.users[key] = { name, email: key, password, groups: [], adminOf: [], createdAt: new Date().toISOString() };
+  const ok = await binPut(db);
+  return { success: ok, user: db.users[key] };
+}
+
+async function loginUser(email, password) {
+  const user = await getUser(email);
+  if (!user) return { success: false, error: 'Email not found' };
+  if (user.password !== password) return { success: false, error: 'Incorrect password' };
+  return { success: true, user };
+}
+
+async function addUserToGroup(email, groupCode, isAdmin=false) {
+  const db = await binGet();
+  if (!db) return false;
+  const key = email.toLowerCase();
+  if (!db.users?.[key]) return false;
+  if (!db.users[key].groups) db.users[key].groups = [];
+  if (!db.users[key].adminOf) db.users[key].adminOf = [];
+  if (!db.users[key].groups.includes(groupCode)) db.users[key].groups.push(groupCode);
+  if (isAdmin && !db.users[key].adminOf.includes(groupCode)) db.users[key].adminOf.push(groupCode);
+  return await binPut(db);
+}
+
+// Simple session storage (survives page navigation, clears on browser close)
+const SESSION = {
+  set(user) { sessionStorage.setItem('wc_user', JSON.stringify(user)); },
+  get() { try { return JSON.parse(sessionStorage.getItem('wc_user')); } catch { return null; } },
+  clear() { sessionStorage.removeItem('wc_user'); },
+};
 
 // Lock/unlock group submissions
 async function setGroupLocked(code, locked) {
