@@ -133,18 +133,13 @@ main{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
 <header>
   <div class="badge">Live Leaderboard</div>
   <h1>WC 2026<br><span>PREDICTOR</span></h1>
-  <div class="header-meta">
-    <span class="meta-item"><span class="live-dot"></span>Live Scoring</span>
-    <span class="meta-item" id="playerCount">— Players</span>
-    <span class="meta-item" id="matchesScored">— Matches Scored</span>
-    <span class="meta-item" id="lastRefresh">Last updated: —</span>
-  </div>
+  <div class="header-meta"><span class="meta-item"><span class="live-dot"></span>Live Scoring</span></div>
 </header>
 
 <nav class="top-nav">
-  <a href="leaderboard.html" class="nav-link active">🏆 Leaderboard</a>
-  <a href="predict.html" class="nav-link cta">+ Submit Predictions</a>
-  <a href="admin.html" class="nav-link">⚙ Admin</a>
+  <a id="navLeaderboard" href="leaderboard.html" class="nav-link active">🏆 Leaderboard</a>
+  <a id="navPredict" href="predict.html" class="nav-link cta">+ Submit Predictions</a>
+  <a id="navAdmin" href="admin.html" class="nav-link">⚙ Admin</a>
 </nav>
 
 <main>
@@ -213,16 +208,21 @@ async function loadAll() {
     document.getElementById('matchesScored').textContent = `${finishedCount}/104 Matches`;
     buildTicker(liveData.fixtures);
 
-    setLoadStatus('Loading player submissions…');
-    setLoadStatus('Loading player submissions…');
-    const submissions = await getAllSubmissions();
+    setLoadStatus('Loading submissions…');
+    const code = new URLSearchParams(window.location.search).get('code');
+    if (!code) { setLoadStatus('No group code in URL — go back to home page'); return; }
+    const group = await getGroup(code);
+    if (!group) { setLoadStatus('Group not found'); return; }
+    document.getElementById('groupTitle').textContent = group.name + ' · ' + code;
+    document.title = group.name + ' — Leaderboard';
+
+    const submissions = await getSubmissions(code);
     if (!submissions || submissions.length === 0) {
-      setLoadStatus('No submissions found yet — share the predict.html link with your players!');
+      setLoadStatus('No submissions yet — share predict.html?code=' + code + ' with your players!');
       document.getElementById('loadingState').style.display = 'block';
       return;
     }
 
-    // Score all submissions
     const scored = [];
     for (const sub of submissions) {
       if (!sub || !sub.playerName) continue;
@@ -354,6 +354,14 @@ function toggleDetail(i) {
   const isOpen = detail.classList.contains('open');
   detail.classList.toggle('open', !isOpen);
   icon.textContent = isOpen ? '▼' : '▲';
+}
+
+// Update nav links with group code
+const _code = new URLSearchParams(window.location.search).get('code');
+if (_code) {
+  document.getElementById('navLeaderboard').href = `leaderboard.html?code=${_code}`;
+  document.getElementById('navPredict').href     = `predict.html?code=${_code}`;
+  document.getElementById('navAdmin').href       = `admin.html?code=${_code}`;
 }
 
 // Auto-refresh every 5 minutes
