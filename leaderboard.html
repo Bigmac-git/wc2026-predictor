@@ -263,7 +263,6 @@ async function loadAll() {
           const _grp = await getGroup(code);
           const _safe = _u.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
           const _has = _grp?.submissions?.[_safe] !== undefined;
-          console.log('User:', _u.name, 'safeName:', _safe, 'hasSubmission:', _has, 'submissions:', Object.keys(_grp?.submissions||{}));
           const btnSubmit = document.getElementById('navPredict');
           const btnEdit   = document.getElementById('navEdit');
           if (btnSubmit && btnEdit) {
@@ -278,7 +277,7 @@ async function loadAll() {
           }
         }
       }
-    } catch(e) { console.log('Button check error:', e); }
+    } catch(e) {}
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('leaderboardContent').style.display = 'block';
