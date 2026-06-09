@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Group Admin — WC 2026 Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--green:#006847;--gold:#C8A84B;--red:#BF0A30;--dark:#080d0a;--card:#131f16;--border:#1a2e1e;--text:#e8f0ea;--muted:#6a8a72;--input-bg:#0d1810;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;font-weight:300;
+  background-image:radial-gradient(ellipse at 10% 0%,rgba(0,104,71,.18) 0%,transparent 50%);}
+
+/* LOGIN */
+#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-box{background:var(--card);border:1px solid var(--border);padding:48px 40px;text-align:center;width:100%;max-width:420px;}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--gold);margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.login-input{width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:16px;padding:12px 16px;outline:none;margin-bottom:10px;transition:border-color .2s;}
+.login-input:focus{border-color:var(--gold);}
+.login-input.code{text-transform:uppercase;letter-spacing:4px;font-size:20px;font-family:'Bebas Neue',sans-serif;}
+.login-btn{width:100%;background:var(--green);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;padding:14px;border:none;cursor:pointer;transition:background .2s;margin-top:4px;}
+.login-btn:hover{background:#00815a;}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;display:none;font-family:'Barlow Condensed',sans-serif;}
+.back-link{display:block;margin-top:16px;color:var(--muted);font-size:12px;letter-spacing:1px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;}
+.back-link:hover{color:var(--text);}
+
+/* MAIN PANEL */
+#mainPanel{display:none;}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:20px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);}
+.header-right{display:flex;gap:10px;align-items:center;}
+.hbtn{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 16px;border:1px solid var(--border);color:var(--muted);background:none;cursor:pointer;text-decoration:none;transition:all .2s;}
+.hbtn:hover{border-color:var(--gold);color:var(--gold);}
+.hbtn.primary{background:var(--green);color:#fff;border-color:var(--green);}
+.hbtn.primary:hover{background:#00815a;}
+
+main{max-width:1000px;margin:0 auto;padding:28px 20px 80px;}
+
+/* GROUP CODE HERO */
+.code-hero{background:linear-gradient(135deg,rgba(0,104,71,.3) 0%,var(--card) 60%);border:1px solid var(--green);padding:32px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;}
+.code-hero-left{}
+.code-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.code-display{font-family:'Bebas Neue',sans-serif;font-size:56px;letter-spacing:6px;color:var(--gold);line-height:1;}
+.group-name-display{font-family:'Barlow Condensed',sans-serif;font-size:18px;color:var(--text);margin-top:4px;letter-spacing:1px;}
+.code-hero-right{display:flex;flex-direction:column;gap:10px;}
+.copy-btn{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;padding:12px 24px;background:var(--gold);color:#000;border:none;cursor:pointer;transition:background .2s;}
+.copy-btn:hover{background:#d4b050;}
+.lock-btn{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;padding:12px 24px;border:2px solid var(--border);color:var(--muted);background:none;cursor:pointer;transition:all .2s;}
+.lock-btn:hover{border-color:var(--red);color:var(--red);}
+.lock-btn.locked{border-color:var(--red);color:var(--red);}
+
+/* QUICK LINKS */
+.quick-links{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px;}
+.quick-link{display:block;background:var(--card);border:1px solid var(--border);padding:16px 20px;text-decoration:none;transition:all .2s;position:relative;overflow:hidden;}
+.quick-link::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform .2s;}
+.quick-link:hover{border-color:var(--gold);}
+.quick-link:hover::before{transform:scaleX(1);}
+.ql-icon{font-size:24px;margin-bottom:8px;}
+.ql-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:1px;color:var(--text);}
+.ql-desc{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+.stat{background:var(--card);border:1px solid var(--border);padding:16px 18px;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);line-height:1;}
+.stat-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr;}}
+
+/* INVITE SECTION */
+.invite-box{background:var(--card);border:1px solid var(--border);padding:24px;margin-bottom:24px;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);margin-bottom:16px;}
+.invite-msg{background:var(--input-bg);border:1px solid var(--border);padding:16px;font-size:13px;color:var(--text);line-height:1.8;font-family:'Barlow',sans-serif;white-space:pre-wrap;}
+.copy-msg-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:10px 20px;background:var(--green);color:#fff;border:none;cursor:pointer;margin-top:10px;transition:background .2s;}
+.copy-msg-btn:hover{background:#00815a;}
+
+/* MEMBERS TABLE */
+.members-box{background:var(--card);border:1px solid var(--border);}
+.members-header{background:rgba(0,104,71,.3);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.members-table{width:100%;border-collapse:collapse;}
+.members-table th{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);}
+.members-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+.members-table tr:last-child td{border:none;}
+.members-table tr:hover td{background:rgba(255,255,255,.02);}
+.status-badge{font-family:'Barlow Condensed',sans-serif;font-size:11px;padding:3px 10px;letter-spacing:1px;}
+.status-ok{background:rgba(0,255,136,.15);color:#00ff88;}
+.status-pending{background:rgba(200,168,75,.15);color:var(--gold);}
+.rank-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);}
+.pts-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);}
+.del-btn{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;padding:5px 12px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.del-btn:hover{border-color:var(--red);color:var(--red);}
+.empty-msg{padding:32px;text-align:center;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--green);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;padding:12px 24px;border-left:4px solid var(--gold);transition:transform .3s;z-index:999;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{background:#8b0000;}
+
+.locked-banner{background:rgba(191,10,48,.15);border:1px solid var(--red);padding:12px 20px;margin-bottom:20px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;color:#e06070;display:none;}
+.locked-banner.show{display:block;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div class="login-title">Group Admin</div>
+    <div class="login-sub">Enter your group code and admin password to manage your group.</div>
+    <input class="login-input code" type="text" id="codeInput" placeholder="XXXX-0000" maxlength="10" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="login-input" type="password" id="pwInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Enter My Group</button>
+    <div class="login-err" id="loginErr">Incorrect code or password</div>
+    <a href="index.html" class="back-link">← Back to home</a>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div id="mainPanel">
+  <header>
+    <div class="logo" id="headerLogo">Group Admin</div>
+    <div class="header-right">
+      <a id="navPredict" href="#" class="hbtn primary">+ Predict</a>
+      <a id="navLeaderboard" href="#" class="hbtn">🏆 Leaderboard</a>
+      <button class="hbtn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LOCKED BANNER -->
+    <div class="locked-banner" id="lockedBanner">🔒 Submissions are currently LOCKED — players cannot submit or edit predictions.</div>
+
+    <!-- GROUP CODE HERO -->
+    <div class="code-hero">
+      <div class="code-hero-left">
+        <div class="code-label">Your Group Code</div>
+        <div class="code-display" id="heroCode">—</div>
+        <div class="group-name-display" id="heroName">—</div>
+      </div>
+      <div class="code-hero-right">
+        <button class="copy-btn" onclick="copyInviteLink()">📋 Copy Invite Link</button>
+        <button class="lock-btn" id="lockBtn" onclick="toggleLock()">🔒 Lock Submissions</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val" id="stMembers">0</div><div class="stat-lbl">Players</div></div>
+      <div class="stat"><div class="stat-val" id="stLeader">—</div><div class="stat-lbl">Current Leader</div></div>
+      <div class="stat"><div class="stat-val" id="stTopPts">0</div><div class="stat-lbl">Top Score</div></div>
+      <div class="stat"><div class="stat-val" id="stAvgPts">0</div><div class="stat-lbl">Avg Score</div></div>
+    </div>
+
+    <!-- QUICK LINKS -->
+    <div class="quick-links">
+      <a class="quick-link" id="qlPredict" href="#">
+        <div class="ql-icon">📝</div>
+        <div class="ql-title">Submit Predictions</div>
+        <div class="ql-desc">Share this with your players</div>
+      </a>
+      <a class="quick-link" id="qlLeaderboard" href="#">
+        <div class="ql-icon">🏆</div>
+        <div class="ql-title">Leaderboard</div>
+        <div class="ql-desc">Live standings for your group</div>
+      </a>
+      <div class="quick-link" style="cursor:pointer;" onclick="copyInviteLink()">
+        <div class="ql-icon">🔗</div>
+        <div class="ql-title">Copy Invite Link</div>
+        <div class="ql-desc">Send to players to join</div>
+      </div>
+      <div class="quick-link" style="cursor:pointer;" onclick="copyInviteMessage()">
+        <div class="ql-icon">💬</div>
+        <div class="ql-title">Copy Invite Message</div>
+        <div class="ql-desc">Ready-to-send WhatsApp message</div>
+      </div>
+    </div>
+
+    <!-- INVITE MESSAGE -->
+    <div class="invite-box">
+      <div class="section-title">Invite Message</div>
+      <div class="invite-msg" id="inviteMsg">Loading…</div>
+      <button class="copy-msg-btn" onclick="copyInviteMessage()">📋 Copy Message</button>
+    </div>
+
+    <!-- MEMBERS -->
+    <div class="members-box">
+      <div class="members-header">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);">Members & Standings</span>
+        <button class="hbtn" onclick="loadMembers()">↻ Refresh</button>
+      </div>
+      <table class="members-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Submitted</th>
+            <th>Pts</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="membersBody">
+          <tr><td colspan="6"><div class="empty-msg">Loading members…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+let currentCode = '';
+let currentGroup = null;
+let isLocked = false;
+
+// Pre-fill code from URL
+window.addEventListener('load', () => {
+  const urlCode = new URLSearchParams(window.location.search).get('code');
+  if (urlCode) document.getElementById('codeInput').value = urlCode;
+});
+
+async function doLogin() {
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const pw   = document.getElementById('pwInput').value.trim();
+  if (!code || !pw) { showErr('Please enter both code and password'); return; }
+
+  document.querySelector('.login-btn').textContent = 'Checking…';
+  const group = await getGroup(code);
+  document.querySelector('.login-btn').textContent = 'Enter My Group';
+
+  if (!group) { showErr('Group not found — check your code'); return; }
+  if (pw !== group.adminPassword) { showErr('Incorrect password'); return; }
+
+  currentCode  = code;
+  currentGroup = group;
+  isLocked     = group.locked === true;
+
+  document.getElementById('loginWrap').style.display  = 'none';
+  document.getElementById('mainPanel').style.display  = 'block';
+  initPanel();
+}
+
+function showErr(msg) {
+  const e = document.getElementById('loginErr');
+  e.textContent = msg;
+  e.style.display = 'block';
+}
+
+function logout() {
+  document.getElementById('loginWrap').style.display  = 'flex';
+  document.getElementById('mainPanel').style.display  = 'none';
+  document.getElementById('pwInput').value = '';
+}
+
+function initPanel() {
+  const base = window.location.href.split('/group-admin')[0];
+  const predictUrl     = `${base}/predict.html?code=${currentCode}`;
+  const leaderboardUrl = `${base}/leaderboard.html?code=${currentCode}`;
+
+  // Header
+  document.getElementById('headerLogo').textContent = currentGroup.name + ' — Admin';
+  document.title = currentGroup.name + ' — Group Admin';
+
+  // Hero
+  document.getElementById('heroCode').textContent = currentCode;
+  document.getElementById('heroName').textContent = currentGroup.name + ' · Created by ' + currentGroup.createdBy;
+
+  // Nav links
+  document.getElementById('navPredict').href     = predictUrl;
+  document.getElementById('navLeaderboard').href = leaderboardUrl;
+
+  // Quick links
+  document.getElementById('qlPredict').href     = predictUrl;
+  document.getElementById('qlLeaderboard').href = leaderboardUrl;
+
+  // Lock state
+  updateLockUI();
+
+  // Invite message
+  document.getElementById('inviteMsg').textContent =
+`🏆 WC 2026 Predictor — ${currentGroup.name}
+
+You've been invited to join our World Cup 2026 prediction league!
+
+👉 Submit your predictions here:
+${predictUrl}
+
+🏆 Watch the live leaderboard here:
+${leaderboardUrl}
+
+Your group code: ${currentCode}
+
+Good luck! ⚽`;
+
+  loadMembers();
+}
+
+function updateLockUI() {
+  const btn = document.getElementById('lockBtn');
+  const banner = document.getElementById('lockedBanner');
+  if (isLocked) {
+    btn.textContent = '🔓 Unlock Submissions';
+    btn.classList.add('locked');
+    banner.classList.add('show');
+  } else {
+    btn.textContent = '🔒 Lock Submissions';
+    btn.classList.remove('locked');
+    banner.classList.remove('show');
+  }
+}
+
+async function toggleLock() {
+  const newState = !isLocked;
+  showToast(newState ? 'Locking submissions…' : 'Unlocking submissions…');
+  const ok = await setGroupLocked(currentCode, newState);
+  if (ok) {
+    isLocked = newState;
+    updateLockUI();
+    showToast(newState ? '🔒 Submissions locked' : '🔓 Submissions unlocked');
+  } else {
+    showToast('Failed — check connection', true);
+  }
+}
+
+async function loadMembers() {
+  const tbody = document.getElementById('membersBody');
+  tbody.innerHTML = '<tr><td colspan="6"><div class="empty-msg">Loading…</div></td></tr>';
+
+  const submissions = await getSubmissions(currentCode);
+
+  if (!submissions || submissions.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-msg">No submissions yet — share the invite link with your players!</div></td></tr>`;
+    document.getElementById('stMembers').textContent = '0';
+    return;
+  }
+
+  // Score everyone (basic scoring without live data for speed)
+  const scored = submissions.map(s => ({
+    ...s,
+    pts: scoreSubmission(s, {fixtures:[], standings:[], topScorers:[], topCards:[]}).total
+  }));
+  scored.sort((a,b) => b.pts - a.pts);
+
+  // Update stats
+  document.getElementById('stMembers').textContent = scored.length;
+  document.getElementById('stLeader').textContent  = scored[0]?.playerName || '—';
+  document.getElementById('stTopPts').textContent  = scored[0]?.pts || 0;
+  const avg = Math.round(scored.reduce((s,p)=>s+p.pts,0) / scored.length);
+  document.getElementById('stAvgPts').textContent  = avg;
+
+  // Render table
+  tbody.innerHTML = '';
+  scored.forEach((s, i) => {
+    const safeName = (s.playerName||'').toLowerCase().replace(/[^a-z0-9]/g,'_');
+    const submitted = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="rank-num">${i+1}</span></td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;">${s.playerName || 'Unknown'}</td>
+      <td style="color:var(--muted);font-size:12px;">${submitted}</td>
+      <td><span class="pts-num">${s.pts}</span></td>
+      <td><span class="status-badge status-ok">Submitted</span></td>
+      <td><button class="del-btn" onclick="deleteMember('${safeName}','${s.playerName}')">Remove</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function deleteMember(safeName, name) {
+  if (!confirm(`Remove ${name}'s submission? This cannot be undone.`)) return;
+  const ok = await deleteSubmission(currentCode, safeName);
+  if (ok) { showToast(`${name} removed`); loadMembers(); }
+  else showToast('Failed to remove — check connection', true);
+}
+
+function copyInviteLink() {
+  const base = window.location.href.split('/group-admin')[0];
+  const url = `${base}/predict.html?code=${currentCode}`;
+  navigator.clipboard.writeText(url).then(() => showToast('Invite link copied!'));
+}
+
+function copyInviteMessage() {
+  const msg = document.getElementById('inviteMsg').textContent;
+  navigator.clipboard.writeText(msg).then(() => showToast('Message copied — paste into WhatsApp!'));
+}
+
+function showToast(msg, error=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (error?' error':'');
+  if (!error) setTimeout(()=>t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
