@@ -21,6 +21,29 @@ const CONFIG = {
 };
 
 // ============================================================
+//  AUTO-LOAD KEYS FROM SECRET GIST (runs immediately)
+// ============================================================
+const GIST_ID = 'ab198939037b472c9892104e0aff6674';
+
+(async function loadKeysFromGist() {
+  try {
+    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`);
+    if (!r.ok) { console.warn('Gist fetch failed:', r.status); return; }
+    const data = await r.json();
+    const file = data.files['wc2026-keys.json'];
+    if (!file) { console.warn('wc2026-keys.json not found in Gist'); return; }
+    const keys = JSON.parse(file.content);
+    if (keys.GITHUB_TOKEN)     CONFIG.GITHUB_TOKEN     = keys.GITHUB_TOKEN;
+    if (keys.API_FOOTBALL_KEY) CONFIG.API_FOOTBALL_KEY = keys.API_FOOTBALL_KEY;
+    CONFIG.GITHUB_USERNAME = 'Bigmac-git';
+    CONFIG.GITHUB_REPO     = 'wc2026-predictor';
+    console.log('Keys loaded from Gist ✓');
+  } catch(e) {
+    console.warn('Could not load keys from Gist:', e.message);
+  }
+})();
+
+// ============================================================
 //  POINTS SYSTEM
 // ============================================================
 const POINTS = {
