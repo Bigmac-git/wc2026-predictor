@@ -404,32 +404,30 @@ GROUPS.forEach((g, gi) => {
 GROUPS.forEach(g => {
   const grid = document.getElementById('pred-grid-' + g.letter);
   if (!grid) return;
-  grid.innerHTML = `
-    <div class="pred-group">
-      <label class="pred-label">Top Scorer in Group (7 pts)</label>
-      <div class="dropdown-wrap">${buildPlayerDropdown('g'+g.letter+'_topscorer', g.teams, 'Select player...')}<span class="dd-arrow">▼</span></div>
-    </div>
-    <div class="pred-group">
-      <label class="pred-label">Group Winner (5 pts)</label>
-      <div class="dropdown-wrap">${buildCountryDropdown('g'+g.letter+'_winner', g.teams, 'Select team...')}<span class="dd-arrow">▼</span></div>
-    </div>
-    <div class="pred-group">
-      <label class="pred-label">Player to be Carded (5 pts)</label>
-      <div class="dropdown-wrap">${buildPlayerDropdown('g'+g.letter+'_carded', g.teams, 'Select player...')}<span class="dd-arrow">▼</span></div>
-    </div>
-    <div class="pred-group">
-      <label class="pred-label">2nd Place (6 pts)</label>
-      <div class="dropdown-wrap">${buildCountryDropdown('g'+g.letter+'_2nd', g.teams, 'Select team...')}<span class="dd-arrow">▼</span></div>
-    </div>
-    <div class="pred-group">
-      <label class="pred-label">Own Goal Scorer (10 pts)</label>
-      <div class="dropdown-wrap">${buildPlayerDropdown('g'+g.letter+'_og', g.teams, 'Select player...')}<span class="dd-arrow">▼</span></div>
-    </div>
-    <div class="pred-group">
-      <label class="pred-label">3rd Place (6 pts, if qualified)</label>
-      <div class="dropdown-wrap">${buildCountryDropdown('g'+g.letter+'_3rd', g.teams, 'Select team...')}<span class="dd-arrow">▼</span></div>
-    </div>
-  `;
+  const fields = [
+    { id: 'topscorer', label: 'Top Scorer in Group (7 pts)',   type: 'player'  },
+    { id: 'winner',    label: 'Group Winner (5 pts)',           type: 'country' },
+    { id: 'carded',    label: 'Player to be Carded (5 pts)',    type: 'player'  },
+    { id: '2nd',       label: '2nd Place (6 pts)',              type: 'country' },
+    { id: 'og',        label: 'Own Goal Scorer (10 pts)',       type: 'player'  },
+    { id: '3rd',       label: '3rd Place (6 pts, if qualified)',type: 'country' },
+  ];
+  fields.forEach(f => {
+    const wrap = document.createElement('div');
+    wrap.className = 'pred-group';
+    const lbl = document.createElement('label');
+    lbl.className = 'pred-label';
+    lbl.textContent = f.label;
+    const ddWrap = document.createElement('div');
+    ddWrap.className = 'dropdown-wrap';
+    const html = f.type === 'player'
+      ? buildPlayerDropdown('g' + g.letter + '_' + f.id, g.teams, 'Select player...')
+      : buildCountryDropdown('g' + g.letter + '_' + f.id, g.teams, 'Select team...');
+    ddWrap.innerHTML = html + '<span class="dd-arrow">▼</span>';
+    wrap.appendChild(lbl);
+    wrap.appendChild(ddWrap);
+    grid.appendChild(wrap);
+  });
 });
 
 // ---- Build knockout form ----
