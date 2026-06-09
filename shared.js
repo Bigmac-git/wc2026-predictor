@@ -12,7 +12,7 @@ const CONFIG = {
   RESULTS_PATH:      'results.json',              // file in repo for live override results
 
   // --- API-Football (api-football.com) ---
-  API_FOOTBALL_KEY:  'fef4b48051b38c54dae041f485715198',
+  API_FOOTBALL_KEY:  'YOUR_API_FOOTBALL_KEY',
   WC_LEAGUE_ID:      1,                           // FIFA World Cup
   WC_SEASON:         2026,
 
@@ -154,24 +154,42 @@ async function ghList(folder) {
 // ============================================================
 async function apiFootball(endpoint, params={}) {
   const qs = new URLSearchParams({league: CONFIG.WC_LEAGUE_ID, season: CONFIG.WC_SEASON, ...params});
-  // Try direct API first, then fallback proxies
-  const urls = [
-    { url: `https://v3.football.api-sports.io/${endpoint}?${qs}`, headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY } },
-    { url: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://v3.football.api-sports.io/${endpoint}?${qs}`)}`, headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY }, allorigins: true },
-    { url: `https://corsproxy.io/?url=${encodeURIComponent(`https://v3.football.api-sports.io/${endpoint}?${qs}`)}`, headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY } },
+  const apiUrl = `https://v3.football.api-sports.io/${endpoint}?${qs}`;
+  const proxies = [
+    async () => {
+      const r = await fetch(apiUrl, { headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY } });
+      if (!r.ok) throw new Error('direct failed');
+      return await r.json();
+    },
+    async () => {
+      const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`, {
+        headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY }
+      });
+      if (!r.ok) throw new Error('corsproxy failed');
+      return await r.json();
+    },
+    async () => {
+      const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
+        headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY }
+      });
+      if (!r.ok) throw new Error('allorigins failed');
+      return await r.json();
+    },
+    async () => {
+      const r = await fetch(`https://thingproxy.freeboard.io/fetch/${apiUrl}`, {
+        headers: { 'x-apisports-key': CONFIG.API_FOOTBALL_KEY }
+      });
+      if (!r.ok) throw new Error('thingproxy failed');
+      return await r.json();
+    },
   ];
-  for (const {url, headers, allorigins} of urls) {
+  for (const proxy of proxies) {
     try {
-      const r = await fetch(url, { headers });
-      if (!r.ok) continue;
-      const d = await r.json();
-      if (allorigins) {
-        const inner = JSON.parse(d.contents);
-        return inner.response;
-      }
-      return d.response;
+      const d = await proxy();
+      if (d && d.response !== undefined) return d.response;
     } catch(e) { continue; }
   }
+  console.warn('All API proxies failed for:', endpoint);
   return null;
 }
 
