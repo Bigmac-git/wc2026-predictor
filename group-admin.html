@@ -362,7 +362,10 @@ async function loadMembers() {
       <td style="color:var(--muted);font-size:12px;">${submitted}</td>
       <td><span class="pts-num">${s.pts}</span></td>
       <td><span class="status-badge status-ok">Submitted</span></td>
-      <td><button class="del-btn" onclick="deleteMember('${safeName}','${s.playerName}')">Remove</button></td>
+      <td style="display:flex;gap:6px;">
+        <a class="del-btn" style="text-decoration:none;text-align:center;" href="#" onclick="copyEditLink('${safeName}','${s.playerName}');return false;">Edit Link</a>
+        <button class="del-btn" onclick="deleteMember('${safeName}','${s.playerName}')">Remove</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -373,6 +376,12 @@ async function deleteMember(safeName, name) {
   const ok = await deleteSubmission(currentCode, safeName);
   if (ok) { showToast(`${name} removed`); loadMembers(); }
   else showToast('Failed to remove — check connection', true);
+}
+
+function copyEditLink(safeName, playerName) {
+  const base = window.location.href.split('/group-admin')[0];
+  const url = `${base}/predict.html?code=${currentCode}&edit=${encodeURIComponent(playerName)}`;
+  navigator.clipboard.writeText(url).then(() => showToast(`Edit link for ${playerName} copied!`));
 }
 
 function copyInviteLink() {
