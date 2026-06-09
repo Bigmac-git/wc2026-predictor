@@ -565,6 +565,16 @@ async function submitPredictions() {
   }
   document.getElementById('groupTitle').textContent = group.name + ' · ' + code;
   document.title = group.name + ' — WC 2026 Predictor';
+  // Pre-fill name from email if known
+  const emailParam = new URLSearchParams(window.location.search).get('email');
+  if (emailParam) {
+    ensureKeys().then(() => getUser(emailParam)).then(user => {
+      if (user) {
+        const nameEl = document.getElementById('playerName');
+        if (nameEl && !nameEl.value) nameEl.value = user.name;
+      }
+    });
+  }
   if (group.locked) {
     const banner = document.createElement('div');
     banner.style.cssText = 'background:rgba(191,10,48,.15);border-bottom:1px solid #BF0A30;padding:10px 20px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:13px;letter-spacing:1px;color:#e06070;';
