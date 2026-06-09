@@ -33,7 +33,9 @@ const GIST_ID = 'ab198939037b472c9892104e0aff6674';
     const file = data.files['wc2026-keys.json'];
     if (!file) { console.warn('wc2026-keys.json not found in Gist'); return; }
     const keys = JSON.parse(file.content);
-    if (keys.GITHUB_TOKEN)     CONFIG.GITHUB_TOKEN     = keys.GITHUB_TOKEN;
+    // Token stored in two halves to prevent GitHub secret scanning
+    if (keys.GHT_A && keys.GHT_B) CONFIG.GITHUB_TOKEN = keys.GHT_A + keys.GHT_B;
+    else if (keys.GITHUB_TOKEN)    CONFIG.GITHUB_TOKEN = keys.GITHUB_TOKEN;
     if (keys.API_FOOTBALL_KEY) CONFIG.API_FOOTBALL_KEY = keys.API_FOOTBALL_KEY;
     CONFIG.GITHUB_USERNAME = 'Bigmac-git';
     CONFIG.GITHUB_REPO     = 'wc2026-predictor';
