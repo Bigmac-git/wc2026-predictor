@@ -400,9 +400,11 @@ function scoreSubmission(prediction, liveData) {
       breakdown.A += pts; total += pts;
     });
 
-    // Group winner / 2nd / 3rd
+    // Group winner / 2nd / 3rd — only score once all 6 group matches are complete
     const grpStandings = standings[`Group ${g.letter}`];
-    if (grpStandings) {
+    const grpMatchesPlayed = matches.filter(m => m.group === `Group ${g.letter}` && m.score).length;
+    const grpComplete = grpMatchesPlayed === 6;
+    if (grpStandings && grpComplete) {
       const gw = prediction[`g${g.letter}_winner`];
       if (gw && teamsMatch(grpStandings[0]?.team, gw)) {
         breakdown.A += POINTS.A_GROUP_WINNER; total += POINTS.A_GROUP_WINNER;
