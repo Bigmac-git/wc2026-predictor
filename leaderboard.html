@@ -115,7 +115,6 @@ main{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
 @keyframes ticker{from{transform:translateX(100vw);}to{transform:translateX(-100%);}}
 .ticker-item{display:inline-block;margin-right:48px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;}
 .ticker-item .score{color:var(--gold);font-weight:700;}
-.ticker-item .live{color:#00ff88;font-size:10px;margin-left:4px;}
 
 /* RESPONSIVE */
 @media(max-width:700px){
@@ -185,34 +184,23 @@ main{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
   </div>
 </main>
 
-<script src="shared.js"></script>
+<script src="shared.js?v=2"></script>
 <script>
 let allScored = [];
-let liveData = { fixtures: [], standings: [], topScorers: [], topCards: [] };
+let liveData = {};
 
 async function loadAll() {
   document.getElementById('loadingState').style.display = 'block';
   document.getElementById('leaderboardContent').style.display = 'none';
-  setLoadStatus('Fetching live match data from API…');
+  setLoadStatus('Fetching live match data…');
 
   try {
-    // Fetch live data in parallel
-    const [fixtures, standings, topScorers, topCards] = await Promise.all([
-      fetchAllFixtures(),
-      fetchStandings(),
-      fetchTopScorers(),
-      fetchTopCards(),
-    ]);
-    liveData = {
-      fixtures: fixtures || [],
-      standings: standings?.[0]?.league?.standings?.flat() || [],
-      topScorers: topScorers || [],
-      topCards: topCards || [],
-    };
+    // Single call — openfootball + manual overrides combined
+    liveData = await fetchLiveData();
 
-    const finishedCount = liveData.fixtures.filter(f => f.fixture.status.short === 'FT').length;
-    const msEl = document.getElementById('matchesScored'); if(msEl) msEl.textContent = `${finishedCount}/104 Matches`;
-    buildTicker(liveData.fixtures);
+    const finishedCount = liveData.matches.filter(m => m.score).length;
+    document.getElementById('matchesScored').textContent = `${finishedCount}/104 Matches`;
+    buildTicker(liveData.matches);
 
     setLoadStatus('Loading submissions…');
     const code = new URLSearchParams(window.location.search).get('code');
@@ -223,7 +211,6 @@ async function loadAll() {
     }
     const group = await getGroup(code);
     if (!group) { setLoadStatus('Group not found'); return; }
-    const gtEl = document.getElementById('groupTitle'); if(gtEl) gtEl.textContent = group.name + ' · ' + code;
     document.title = group.name + ' — Leaderboard';
 
     const submissions = await getSubmissions(code);
@@ -241,39 +228,35 @@ async function loadAll() {
       scored.push({ name: sub.playerName, ...result, prediction: sub });
     }
 
-    // Sort by total desc
-    scored.sort((a,b) => b.total - a.total);
+    scored.sort((a, b) => b.total - a.total);
     allScored = scored;
 
-    const pcEl = document.getElementById('playerCount'); if(pcEl) pcEl.textContent = `${scored.length} Players`;
-    const stEl = document.getElementById('statusText'); if(stEl) stEl.textContent = `${scored.length} entries scored against ${finishedCount} finished matches`;
-    const lrEl = document.getElementById('lastRefresh'); if(lrEl) lrEl.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
-    const luEl = document.getElementById('lastUpdated'); if(luEl) luEl.textContent = `Last refreshed: ${new Date().toLocaleString()}`;
+    document.getElementById('playerCount').textContent = `${scored.length} Players`;
+    document.getElementById('statusText').textContent = `${scored.length} entries scored · ${finishedCount} matches completed · data via openfootball`;
+    document.getElementById('lastRefresh').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+    document.getElementById('lastUpdated').textContent = `Last refreshed: ${new Date().toLocaleString()}`;
 
     renderPodium(scored);
     renderTable(scored);
 
-    // Show Edit vs Submit button based on whether logged-in user has submitted
+    // Show Edit vs Submit button
     try {
       const _sess = SESSION.get();
       if (_sess?.email) {
+        const _grp = await getGroup(code);
         const _u = await getUser(_sess.email);
         if (_u) {
-          // Check submissions directly from group data
-          const _grp = await getGroup(code);
-          const _safe = _u.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+          const _safe = _u.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
           const _has = _grp?.submissions?.[_safe] !== undefined;
           const btnSubmit = document.getElementById('navPredict');
           const btnEdit   = document.getElementById('navEdit');
-          if (btnSubmit && btnEdit) {
-            if (_has) {
-              btnSubmit.style.display = 'none';
-              btnEdit.style.display   = 'inline-block';
-              btnEdit.href = `predict.html?code=${code}&email=${encodeURIComponent(_sess.email)}`;
-            } else {
-              btnSubmit.style.display = 'inline-block';
-              btnEdit.style.display   = 'none';
-            }
+          if (_has) {
+            btnSubmit.style.display = 'none';
+            btnEdit.style.display   = 'inline-block';
+            btnEdit.href = `predict.html?code=${code}&email=${encodeURIComponent(_sess.email)}`;
+          } else {
+            btnSubmit.style.display = 'inline-block';
+            btnEdit.style.display   = 'none';
           }
         }
       }
@@ -292,24 +275,30 @@ function setLoadStatus(msg) {
   document.getElementById('loadStatus').textContent = msg;
 }
 
-function buildTicker(fixtures) {
-  const recent = fixtures.filter(f => ['FT','LIVE','1H','2H','HT'].includes(f.fixture.status.short)).slice(-15);
-  if (!recent.length) return;
-  const items = recent.map(f => {
-    const isLive = ['LIVE','1H','2H','HT'].includes(f.fixture.status.short);
-    return `<span class="ticker-item">${f.teams.home.name} <span class="score">${f.goals.home??'-'} — ${f.goals.away??'-'}</span> ${f.teams.away.name}${isLive?'<span class="live">● LIVE</span>':''}</span>`;
+// Build ticker from openfootball matches (completed ones)
+function buildTicker(matches) {
+  const completed = matches.filter(m => m.score);
+  if (!completed.length) {
+    document.getElementById('ticker').textContent = 'No results yet — tournament underway!';
+    return;
+  }
+  // Show most recent 15 completed
+  const recent = completed.slice(-15);
+  const items = recent.map(m => {
+    const [h, a] = m.score.ft;
+    return `<span class="ticker-item">${m.team1} <span class="score">${h} — ${a}</span> ${m.team2}</span>`;
   }).join('');
-  document.getElementById('ticker').innerHTML = items + items; // double for seamless loop
+  const ticker = document.getElementById('ticker');
+  ticker.innerHTML = items + items; // double for seamless loop
 }
 
 function renderPodium(scored) {
   const top3 = scored.slice(0, 3);
   const podium = document.getElementById('podium');
   podium.innerHTML = '';
-  // Reorder: 2nd, 1st, 3rd for visual podium
-  const order = [top3[1], top3[0], top3[2]];
-  const classes = ['p2','p1','p3'];
-  const ranks = [2,1,3];
+  const order  = [top3[1], top3[0], top3[2]];
+  const classes = ['p2', 'p1', 'p3'];
+  const ranks   = [2, 1, 3];
   order.forEach((s, i) => {
     if (!s) return;
     const div = document.createElement('div');
@@ -361,7 +350,7 @@ function buildDetailHTML(s) {
   if (!s.detail || s.detail.length === 0) {
     return `<div style="padding:16px 20px;color:var(--muted);font-size:13px;">No points scored yet — waiting for match results.</div>`;
   }
-  const bySection = {A:[],B:[],C:[],D:[]};
+  const bySection = { A:[], B:[], C:[], D:[] };
   s.detail.forEach(d => bySection[d.section]?.push(d));
   let html = `<div class="detail-inner">`;
   ['A','B','C','D'].forEach(sec => {
@@ -373,11 +362,15 @@ function buildDetailHTML(s) {
   });
   html += `</div>`;
 
-  // Add unscored predictions preview
+  // Pending predictions preview
   html += `<div class="detail-section" style="color:var(--muted);">Pending Predictions</div><div class="detail-inner">`;
   const pred = s.prediction;
-  const awards = {golden_boot:'Golden Boot',golden_glove:'Golden Glove',player_tourney:'POTT',tournament_winner:'Winner',player_sent_off:'Sent Off',team_lose_pens:'Lose Pens',player_miss_pen:'Miss Pen'};
-  Object.entries(awards).forEach(([k,lbl]) => {
+  const awards = {
+    golden_boot:'Golden Boot', golden_glove:'Golden Glove',
+    player_of_tournament:'POTT', tournament_winner:'Winner',
+    player_sent_off:'Sent Off', team_lose_pens:'Lose Pens', player_miss_pen:'Miss Pen'
+  };
+  Object.entries(awards).forEach(([k, lbl]) => {
     if (pred[k]) html += `<div class="detail-item"><span class="detail-label">${lbl}: ${pred[k]}</span><span class="detail-pts" style="color:var(--muted)">?</span></div>`;
   });
   html += `</div>`;
@@ -386,17 +379,16 @@ function buildDetailHTML(s) {
 
 function toggleDetail(i) {
   const detail = document.getElementById(`detail-${i}`);
-  const icon = document.getElementById(`expand-icon-${i}`);
+  const icon   = document.getElementById(`expand-icon-${i}`);
   const isOpen = detail.classList.contains('open');
   detail.classList.toggle('open', !isOpen);
   icon.textContent = isOpen ? '▼' : '▲';
 }
 
-// Update nav links with group code
+// Nav links with group code
 const _code = new URLSearchParams(window.location.search).get('code');
 if (_code) {
   document.getElementById('navLeaderboard').href = `leaderboard.html?code=${_code}`;
-  // Set predict link with email if logged in
   const _sess = SESSION.get();
   if (_sess?.email) {
     document.getElementById('navPredict').href = `predict.html?code=${_code}&email=${encodeURIComponent(_sess.email)}`;
@@ -405,8 +397,8 @@ if (_code) {
   }
 }
 
-// Auto-refresh every 5 minutes
-setInterval(loadAll, 5 * 60 * 1000);
+// Auto-refresh every 15 minutes (matches openfootball cache TTL)
+setInterval(loadAll, 15 * 60 * 1000);
 loadAll();
 </script>
 </body>
