@@ -381,21 +381,27 @@ function scoreSubmission(prediction, liveData) {
 
       const [ah, aa] = getScore(match, t1);
       let pts = 0;
+      const pr = +ph > +pa ? 'H' : +ph < +pa ? 'A' : 'D';
+      const ar = ah > aa ? 'H' : ah < aa ? 'A' : 'D';
 
+      // Correct result (W/D/L)
+      if (pr === ar) {
+        pts += POINTS.A_CORRECT_RESULT;
+        detail.push({ label: `Result ${t1} vs ${t2}`, pts: POINTS.A_CORRECT_RESULT, section: 'A' });
+      }
+      // 1pt per correct team score (independent, max 2pts)
+      if (+ph === ah) {
+        pts += POINTS.A_CORRECT_SCORE_TEAM;
+        detail.push({ label: `${t1} score correct (${ph})`, pts: POINTS.A_CORRECT_SCORE_TEAM, section: 'A' });
+      }
+      if (+pa === aa) {
+        pts += POINTS.A_CORRECT_SCORE_TEAM;
+        detail.push({ label: `${t2} score correct (${pa})`, pts: POINTS.A_CORRECT_SCORE_TEAM, section: 'A' });
+      }
+      // Exact scoreline bonus
       if (+ph === ah && +pa === aa) {
         pts += POINTS.A_CORRECT_SCORELINE;
         detail.push({ label: `Scoreline ${t1} ${ph}-${pa} ${t2}`, pts: POINTS.A_CORRECT_SCORELINE, section: 'A' });
-      } else {
-        const pr = +ph > +pa ? 'H' : +ph < +pa ? 'A' : 'D';
-        const ar = ah > aa ? 'H' : ah < aa ? 'A' : 'D';
-        if (pr === ar) {
-          pts += POINTS.A_CORRECT_RESULT;
-          detail.push({ label: `Result ${t1} vs ${t2}`, pts: POINTS.A_CORRECT_RESULT, section: 'A' });
-        }
-        if (+ph === ah || +pa === aa) {
-          pts += POINTS.A_CORRECT_SCORE_TEAM;
-          detail.push({ label: `Score (one team) ${t1} vs ${t2}`, pts: POINTS.A_CORRECT_SCORE_TEAM, section: 'A' });
-        }
       }
       breakdown.A += pts; total += pts;
     });
@@ -453,16 +459,23 @@ function scoreSubmission(prediction, liveData) {
     if (!match) return;
     const [ah, aa] = match.score.ft;
     let pts = 0;
+    const pr = +ph > +pa ? 'H' : +ph < +pa ? 'A' : 'D';
+    const ar = ah > aa ? 'H' : ah < aa ? 'A' : 'D';
+    if (pr === ar) {
+      pts += POINTS.B_CORRECT_RESULT;
+      detail.push({ label: `Result game ${f.no}`, pts: POINTS.B_CORRECT_RESULT, section: 'B' });
+    }
+    if (+ph === ah) {
+      pts += POINTS.B_CORRECT_SCORE_TEAM;
+      detail.push({ label: `Home score correct game ${f.no}`, pts: POINTS.B_CORRECT_SCORE_TEAM, section: 'B' });
+    }
+    if (+pa === aa) {
+      pts += POINTS.B_CORRECT_SCORE_TEAM;
+      detail.push({ label: `Away score correct game ${f.no}`, pts: POINTS.B_CORRECT_SCORE_TEAM, section: 'B' });
+    }
     if (+ph === ah && +pa === aa) {
       pts += POINTS.B_CORRECT_SCORELINE;
       detail.push({ label: `Scoreline game ${f.no}`, pts: POINTS.B_CORRECT_SCORELINE, section: 'B' });
-    } else {
-      const pr = +ph > +pa ? 'H' : +ph < +pa ? 'A' : 'D';
-      const ar = ah > aa ? 'H' : ah < aa ? 'A' : 'D';
-      if (pr === ar) {
-        pts += POINTS.B_CORRECT_RESULT;
-        detail.push({ label: `Result game ${f.no}`, pts: POINTS.B_CORRECT_RESULT, section: 'B' });
-      }
     }
     breakdown.B += pts; total += pts;
   });
@@ -476,16 +489,23 @@ function scoreSubmission(prediction, liveData) {
     if (!match) return;
     const [ah, aa] = match.score.ft;
     let pts = 0;
+    const pr = +ph > +pa ? 'H' : +ph < +pa ? 'A' : 'D';
+    const ar = ah > aa ? 'H' : ah < aa ? 'A' : 'D';
+    if (pr === ar) {
+      pts += POINTS.C_CORRECT_RESULT;
+      detail.push({ label: `Result game ${f.no}`, pts: POINTS.C_CORRECT_RESULT, section: 'C' });
+    }
+    if (+ph === ah) {
+      pts += POINTS.C_CORRECT_SCORE_TEAM;
+      detail.push({ label: `Home score correct game ${f.no}`, pts: POINTS.C_CORRECT_SCORE_TEAM, section: 'C' });
+    }
+    if (+pa === aa) {
+      pts += POINTS.C_CORRECT_SCORE_TEAM;
+      detail.push({ label: `Away score correct game ${f.no}`, pts: POINTS.C_CORRECT_SCORE_TEAM, section: 'C' });
+    }
     if (+ph === ah && +pa === aa) {
       pts += POINTS.C_CORRECT_SCORELINE;
       detail.push({ label: `Scoreline game ${f.no}`, pts: POINTS.C_CORRECT_SCORELINE, section: 'C' });
-    } else {
-      const pr = +ph > +pa ? 'H' : +ph < +pa ? 'A' : 'D';
-      const ar = ah > aa ? 'H' : ah < aa ? 'A' : 'D';
-      if (pr === ar) {
-        pts += POINTS.C_CORRECT_RESULT;
-        detail.push({ label: `Result game ${f.no}`, pts: POINTS.C_CORRECT_RESULT, section: 'C' });
-      }
     }
     breakdown.C += pts; total += pts;
   });
