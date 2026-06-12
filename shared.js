@@ -194,14 +194,32 @@ async function apiFootball(endpoint, params={}) {
   await ensureKeys();
   const qs = new URLSearchParams({league: CONFIG.WC_LEAGUE_ID, season: CONFIG.WC_SEASON, ...params});
   const apiUrl = `https://v3.football.api-sports.io/${endpoint}?${qs}`;
-  const proxies = [
-    async () => { const r = await fetch(apiUrl, {headers:{'x-apisports-key':CONFIG.API_FOOTBALL_KEY}}); if(!r.ok) throw new Error('direct'); return r.json(); },
-    async () => { const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`, {headers:{'x-apisports-key':CONFIG.API_FOOTBALL_KEY}}); if(!r.ok) throw new Error('proxy1'); return r.json(); },
-    async () => { const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {headers:{'x-apisports-key':CONFIG.API_FOOTBALL_KEY}}); if(!r.ok) throw new Error('proxy2'); return r.json(); },
+  
+  // Try multiple CORS proxies in sequence
+  const proxyUrls = [
+    `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
+    `https://cors-anywhere.herokuapp.com/${apiUrl}`,
+    apiUrl, // direct last
   ];
-  for (const p of proxies) {
-    try { const d = await p(); if(d?.response !== undefined) return d.response; } catch(e) { continue; }
+
+  for (const url of proxyUrls) {
+    try {
+      const r = await fetch(url, {
+        headers: {
+          'x-apisports-key': CONFIG.API_FOOTBALL_KEY,
+          'x-rapidapi-key': CONFIG.API_FOOTBALL_KEY,
+        }
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (d?.response !== undefined) {
+        console.log('API-Football connected via:', url.substring(0, 50));
+        return d.response;
+      }
+    } catch(e) { continue; }
   }
+  console.warn('All API-Football proxies failed for:', endpoint);
   return null;
 }
 
