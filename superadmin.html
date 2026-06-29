@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Super Admin — WC2026 Predictor</title>
-<script src="shared.js?v=1"></script>
+<script src="shared.js?v=5"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #0a1628; color: #e0e6f0; min-height: 100vh; }
@@ -18,16 +18,26 @@
   
   .btn { display: inline-block; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: opacity 0.2s; }
   .btn:hover { opacity: 0.85; }
-  .btn-primary { background: #f5c518; color: #0a1628; width: 100%; }
+  .btn-primary { background: #f5c518; color: #0a1628; }
+  .btn-primary-full { background: #f5c518; color: #0a1628; width: 100%; }
   .btn-save { background: #28a745; color: #fff; }
   .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
   .btn-danger { background: #dc3545; color: #fff; }
+  .btn-warning { background: #f5c518; color: #0a1628; }
 
-  #admin-panel { display: none; max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  #admin-panel { display: none; max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
   
   .header { background: #142038; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
   .header h1 { color: #f5c518; font-size: 1.3rem; }
   .header .sub { color: #8899aa; font-size: 0.85rem; margin-top: 2px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid #1e3a5f; }
+  .tab { padding: 10px 20px; cursor: pointer; font-size: 0.9rem; color: #8899aa; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; }
+  .tab:hover { color: #e0e6f0; }
+  .tab.active { color: #f5c518; border-bottom-color: #f5c518; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
   .card { background: #142038; border: 1px solid #1e3a5f; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
   .card h2 { color: #f5c518; font-size: 1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -37,7 +47,6 @@
   .field-row label { color: #8899aa; font-size: 0.85rem; min-width: 160px; }
   .field-row input { flex: 1; margin: 0; padding: 9px 12px; font-size: 0.9rem; }
 
-  /* Tag-style list for cards/red cards/own goals/missed pens */
   .tag-section { margin-bottom: 16px; }
   .tag-section label { color: #8899aa; font-size: 0.85rem; display: block; margin-bottom: 8px; }
   .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 32px; }
@@ -48,24 +57,48 @@
 
   .status-bar { background: #0d1f35; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 0.85rem; color: #8899aa; display: flex; gap: 24px; flex-wrap: wrap; }
   .status-bar span { display: flex; align-items: center; gap: 6px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #28a745; }
-  .dot.amber { background: #f5c518; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #28a745; display: inline-block; }
 
   .save-bar { position: sticky; bottom: 0; background: #0a1628; border-top: 1px solid #1e3a5f; padding: 16px 0; display: flex; gap: 12px; align-items: center; }
   .save-bar .unsaved { color: #f5c518; font-size: 0.85rem; display: none; }
   .save-bar .unsaved.show { display: block; }
 
+  /* USER TABLE */
+  .user-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .user-table th { background: #0d1f35; color: #8899aa; padding: 10px 12px; text-align: left; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+  .user-table td { padding: 10px 12px; border-bottom: 1px solid #0d1f35; vertical-align: middle; }
+  .user-table tr:hover td { background: #1a2d48; }
+  .user-table .pw { font-family: monospace; background: #0d1f35; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; color: #f5c518; }
+  .user-table .grp-chip { background: #1e3a5f; border-radius: 10px; padding: 2px 8px; font-size: 0.75rem; margin: 2px; display: inline-block; }
+  .user-table .grp-chip.admin { background: #1a4731; color: #48bb78; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* GROUP TABLE */
+  .group-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .group-table th { background: #0d1f35; color: #8899aa; padding: 10px 12px; text-align: left; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+  .group-table td { padding: 10px 12px; border-bottom: 1px solid #0d1f35; vertical-align: top; }
+  .group-table tr:hover td { background: #1a2d48; }
+  .member-chip { background: #1e3a5f; border-radius: 10px; padding: 2px 8px; font-size: 0.75rem; margin: 2px; display: inline-block; }
+  .member-chip.admin { background: #1a4731; color: #48bb78; }
+
+  /* MODAL */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #142038; border: 1px solid #1e3a5f; border-radius: 12px; padding: 28px; width: 420px; max-width: 95vw; }
+  .modal h3 { color: #f5c518; margin-bottom: 16px; }
+  .modal input { margin-bottom: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+
   .fixtures-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   .fixtures-table th { color: #8899aa; padding: 8px; text-align: left; border-bottom: 1px solid #1e3a5f; }
   .fixtures-table td { padding: 7px 8px; border-bottom: 1px solid #0d1f35; }
   .fixtures-table tr:hover td { background: #1a2d48; }
-  .score-cell { display: flex; gap: 6px; align-items: center; }
-  .score-cell input { width: 40px; text-align: center; padding: 4px; margin: 0; }
-  .score-cell span { color: #8899aa; }
   .match-status { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; }
-  .status-done   { background: #1a4731; color: #48bb78; }
-  .status-sched  { background: #1e3a5f; color: #8899aa; }
-  .status-live   { background: #7c2020; color: #fc8181; }
+  .status-done { background: #1a4731; color: #48bb78; }
+  .status-sched { background: #1e3a5f; color: #8899aa; }
+
+  .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+  .search-bar input { flex: 1; margin: 0; }
 
   #toast { position:fixed; bottom:24px; right:24px; background:#28a745; color:#fff; padding:12px 20px; border-radius:8px; font-size:0.9rem; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:9999; }
   #toast.show { opacity:1; }
@@ -80,9 +113,9 @@
 <div class="login-wrap" id="login-wrap">
   <div class="login-box">
     <h1>⚽ Super Admin</h1>
-    <p>WC2026 Predictor — Results & Overrides Panel</p>
+    <p>WC2026 Predictor — Admin Panel</p>
     <input type="password" id="pw-input" placeholder="Super admin password" />
-    <button class="btn btn-primary" onclick="doLogin()">Enter</button>
+    <button class="btn btn-primary-full" onclick="doLogin()">Enter</button>
   </div>
 </div>
 
@@ -92,141 +125,223 @@
   <div class="header">
     <div>
       <h1>⚽ Super Admin Panel</h1>
-      <div class="sub">WC2026 Predictor — Live Results &amp; Manual Overrides</div>
+      <div class="sub">WC2026 Predictor — Results, Overrides &amp; User Management</div>
     </div>
     <a href="index.html" style="color:#8899aa;font-size:0.85rem;">← Back to site</a>
   </div>
 
-  <div class="status-bar" id="status-bar">
-    <span><span class="dot" id="api-dot"></span> <span id="api-status">Loading data...</span></span>
-    <span>Completed: <strong id="matches-done">—</strong> / 104</span>
+  <div class="status-bar">
+    <span><span class="dot" id="api-dot" style="background:#8899aa"></span> <span id="api-status">Loading...</span></span>
+    <span>Matches: <strong id="matches-done">—</strong> / 104</span>
+    <span>Users: <strong id="user-count">—</strong></span>
+    <span>Groups: <strong id="group-count">—</strong></span>
     <span>Last saved: <strong id="last-saved">—</strong></span>
   </div>
 
-  <!-- SECTION D OVERRIDES -->
-  <div class="card">
-    <h2>🏆 Tournament Awards <span class="badge">Section D scoring</span></h2>
-
-    <div class="field-row">
-      <label>Golden Boot winner</label>
-      <input type="text" id="ov-goldenBoot" placeholder="Player name" oninput="markUnsaved()" />
-    </div>
-    <div class="field-row">
-      <label>Golden Glove winner</label>
-      <input type="text" id="ov-goldenGlove" placeholder="Player name" oninput="markUnsaved()" />
-    </div>
-    <div class="field-row">
-      <label>Player of Tournament</label>
-      <input type="text" id="ov-playerOfTournament" placeholder="Player name" oninput="markUnsaved()" />
-    </div>
-    <div class="field-row">
-      <label>Tournament Winner</label>
-      <input type="text" id="ov-tournamentWinner" placeholder="Team name (override auto-detect)" oninput="markUnsaved()" />
-    </div>
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('users')">👥 Users</div>
+    <div class="tab" onclick="switchTab('groups')">🏟️ Groups</div>
+    <div class="tab" onclick="switchTab('overrides')">⚙️ Overrides</div>
+    <div class="tab" onclick="switchTab('fixtures')">📋 Fixtures</div>
   </div>
 
-  <!-- RED CARDS -->
-  <div class="card">
-    <h2>🟥 Red Cards <span class="badge">Section D — 10pts</span></h2>
-    <div class="tag-section">
-      <label>Players sent off during the tournament:</label>
-      <div class="tag-list" id="tags-redCards"></div>
-      <div class="tag-input-row">
-        <input type="text" id="input-redCards" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('redCards')" />
-        <button class="btn btn-sm btn-primary" onclick="addTag('redCards')">Add</button>
+  <!-- TAB: USERS -->
+  <div class="tab-panel active" id="tab-users">
+    <div class="card">
+      <h2>👥 All Users</h2>
+      <div class="search-bar">
+        <input type="text" id="user-search" placeholder="Search by name or email…" oninput="renderUsers()" style="margin:0;" />
+        <button class="btn btn-sm btn-primary" onclick="loadUsersAndGroups()">↻ Refresh</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Password</th>
+              <th>Groups</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- MISSED PENALTIES -->
-  <div class="card">
-    <h2>❌ Missed Penalties <span class="badge">Section D — 10pts</span></h2>
-    <div class="tag-section">
-      <label>Players who missed a penalty during normal/extra time:</label>
-      <div class="tag-list" id="tags-missedPenalties"></div>
-      <div class="tag-input-row">
-        <input type="text" id="input-missedPenalties" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('missedPenalties')" />
-        <button class="btn btn-sm btn-primary" onclick="addTag('missedPenalties')">Add</button>
+  <!-- TAB: GROUPS -->
+  <div class="tab-panel" id="tab-groups">
+    <div class="card">
+      <h2>🏟️ All Groups</h2>
+      <div class="search-bar">
+        <input type="text" id="group-search" placeholder="Search by group name or code…" oninput="renderGroups()" style="margin:0;" />
+        <button class="btn btn-sm btn-primary" onclick="loadUsersAndGroups()">↻ Refresh</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="group-table">
+          <thead>
+            <tr>
+              <th>Group Name</th>
+              <th>Code</th>
+              <th>Members</th>
+              <th>Submissions</th>
+              <th>Locked</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="groups-tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- PENALTY SHOOTOUT LOSERS -->
-  <div class="card">
-    <h2>🥅 Penalty Shootout Losers <span class="badge">Section D — 8pts</span></h2>
-    <div class="tag-section">
-      <label>Teams eliminated via penalty shootout:</label>
-      <div class="tag-list" id="tags-penaltyShootoutLosers"></div>
-      <div class="tag-input-row">
-        <input type="text" id="input-penaltyShootoutLosers" placeholder="Team name, then Add" onkeydown="if(event.key==='Enter')addTag('penaltyShootoutLosers')" />
-        <button class="btn btn-sm btn-primary" onclick="addTag('penaltyShootoutLosers')">Add</button>
+  <!-- TAB: OVERRIDES -->
+  <div class="tab-panel" id="tab-overrides">
+
+    <div class="card">
+      <h2>🏆 Tournament Awards <span class="badge">Section D scoring</span></h2>
+      <div class="field-row">
+        <label>Golden Boot winner</label>
+        <input type="text" id="ov-goldenBoot" placeholder="Player name" oninput="markUnsaved()" />
       </div>
+      <div class="field-row">
+        <label>Golden Glove winner</label>
+        <input type="text" id="ov-goldenGlove" placeholder="Player name" oninput="markUnsaved()" />
+      </div>
+      <div class="field-row">
+        <label>Player of Tournament</label>
+        <input type="text" id="ov-playerOfTournament" placeholder="Player name" oninput="markUnsaved()" />
+      </div>
+      <div class="field-row">
+        <label>Tournament Winner</label>
+        <input type="text" id="ov-tournamentWinner" placeholder="Team name (override auto-detect)" oninput="markUnsaved()" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🟥 Red Cards <span class="badge">Section D — 10pts</span></h2>
+      <div class="tag-section">
+        <label>Players sent off during the tournament:</label>
+        <div class="tag-list" id="tags-redCards"></div>
+        <div class="tag-input-row">
+          <input type="text" id="input-redCards" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('redCards')" />
+          <button class="btn btn-sm btn-primary" onclick="addTag('redCards')">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>❌ Missed Penalties <span class="badge">Section D — 10pts</span></h2>
+      <div class="tag-section">
+        <label>Players who missed a penalty during normal/extra time:</label>
+        <div class="tag-list" id="tags-missedPenalties"></div>
+        <div class="tag-input-row">
+          <input type="text" id="input-missedPenalties" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('missedPenalties')" />
+          <button class="btn btn-sm btn-primary" onclick="addTag('missedPenalties')">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🥅 Penalty Shootout Losers <span class="badge">Section D — 8pts</span></h2>
+      <div class="tag-section">
+        <label>Teams eliminated via penalty shootout:</label>
+        <div class="tag-list" id="tags-penaltyShootoutLosers"></div>
+        <div class="tag-input-row">
+          <input type="text" id="input-penaltyShootoutLosers" placeholder="Team name, then Add" onkeydown="if(event.key==='Enter')addTag('penaltyShootoutLosers')" />
+          <button class="btn btn-sm btn-primary" onclick="addTag('penaltyShootoutLosers')">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>😬 Own Goals <span class="badge">Section A — 10pts</span></h2>
+      <div class="tag-section">
+        <label>Players who scored an own goal:</label>
+        <div class="tag-list" id="tags-ownGoals"></div>
+        <div class="tag-input-row">
+          <input type="text" id="input-ownGoals" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('ownGoals')" />
+          <button class="btn btn-sm btn-primary" onclick="addTag('ownGoals')">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🟨 Yellow Cards <span class="badge">Section A — 5pts</span></h2>
+      <div class="tag-section">
+        <label>Players booked (yellow card) during the tournament:</label>
+        <div class="tag-list" id="tags-yellowCards"></div>
+        <div class="tag-input-row">
+          <input type="text" id="input-yellowCards" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('yellowCards')" />
+          <button class="btn btn-sm btn-primary" onclick="addTag('yellowCards')">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>👟 Group Top Scorers <span class="badge">Section A — 7pts each</span></h2>
+      <p style="color:#8899aa;font-size:0.85rem;margin-bottom:16px;">Enter the top scorer for each group once all group matches are complete.</p>
+      <div id="group-topscorers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn btn-save" onclick="saveOverrides()">💾 Save All Overrides</button>
+      <span class="unsaved" id="unsaved-indicator">● Unsaved changes</span>
     </div>
   </div>
 
-  <!-- OWN GOALS -->
-  <div class="card">
-    <h2>😬 Own Goals <span class="badge">Section A — 10pts</span></h2>
-    <div class="tag-section">
-      <label>Players who scored an own goal:</label>
-      <div class="tag-list" id="tags-ownGoals"></div>
-      <div class="tag-input-row">
-        <input type="text" id="input-ownGoals" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('ownGoals')" />
-        <button class="btn btn-sm btn-primary" onclick="addTag('ownGoals')">Add</button>
-      </div>
+  <!-- TAB: FIXTURES -->
+  <div class="tab-panel" id="tab-fixtures">
+    <div class="card">
+      <h2>📋 Live Fixtures <span class="badge">Openfootball — auto-updated</span></h2>
+      <table class="fixtures-table">
+        <thead><tr><th>#</th><th>Round</th><th>Match</th><th>Score</th><th>Date</th></tr></thead>
+        <tbody id="fixtures-tbody"></tbody>
+      </table>
     </div>
   </div>
 
-  <!-- YELLOW CARDS (group stage) -->
-  <div class="card">
-    <h2>🟨 Yellow Cards <span class="badge">Section A — 5pts</span></h2>
-    <div class="tag-section">
-      <label>Players booked (yellow card) during the tournament:</label>
-      <div class="tag-list" id="tags-yellowCards"></div>
-      <div class="tag-input-row">
-        <input type="text" id="input-yellowCards" placeholder="Player name, then Add" onkeydown="if(event.key==='Enter')addTag('yellowCards')" />
-        <button class="btn btn-sm btn-primary" onclick="addTag('yellowCards')">Add</button>
-      </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-bg" id="modal-pw">
+  <div class="modal">
+    <h3>🔑 Reset Password</h3>
+    <p style="color:#8899aa;font-size:0.85rem;margin-bottom:16px;" id="modal-pw-user"></p>
+    <input type="text" id="modal-pw-input" placeholder="New password" />
+    <div class="modal-actions">
+      <button class="btn btn-save" onclick="confirmResetPw()">Save</button>
+      <button class="btn btn-sm" style="background:#1e3a5f;color:#e0e6f0;" onclick="closeModal('modal-pw')">Cancel</button>
     </div>
   </div>
+</div>
 
-  <!-- GROUP TOP SCORERS -->
-  <div class="card">
-    <h2>👟 Group Top Scorers <span class="badge">Section A — 7pts each</span></h2>
-    <p style="color:#8899aa;font-size:0.85rem;margin-bottom:16px;">Enter the top scorer for each group once all group matches are complete.</p>
-    <div id="group-topscorers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+<!-- DELETE USER MODAL -->
+<div class="modal-bg" id="modal-delete">
+  <div class="modal">
+    <h3>🗑️ Delete User</h3>
+    <p style="color:#8899aa;font-size:0.85rem;margin-bottom:16px;" id="modal-delete-msg"></p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+      <button class="btn btn-sm" style="background:#1e3a5f;color:#e0e6f0;" onclick="closeModal('modal-delete')">Cancel</button>
+    </div>
   </div>
-
-  <!-- LIVE FIXTURES STATUS -->
-  <div class="card">
-    <h2>📋 Live Fixtures (from Openfootball) <span class="badge">Read-only</span></h2>
-    <p style="color:#8899aa;font-size:0.85rem;margin-bottom:16px;">Auto-updated every 15 mins. Scores feed directly into leaderboard scoring for Sections A/B/C.</p>
-    <table class="fixtures-table">
-      <thead><tr><th>#</th><th>Match</th><th>Score</th><th>Status</th></tr></thead>
-      <tbody id="fixtures-tbody"></tbody>
-    </table>
-  </div>
-
-  <div class="save-bar">
-    <button class="btn btn-save" onclick="saveOverrides()">💾 Save All Overrides</button>
-    <span class="unsaved" id="unsaved-indicator">● Unsaved changes</span>
-  </div>
-
 </div>
 
 <div id="toast"></div>
 
 <script>
-// ---- STATE ----
 let overrides = {};
-let tagData = {
-  redCards: [],
-  missedPenalties: [],
-  penaltyShootoutLosers: [],
-  ownGoals: [],
-  yellowCards: [],
-};
+let tagData = { redCards:[], missedPenalties:[], penaltyShootoutLosers:[], ownGoals:[], yellowCards:[] };
+let allUsers = {};
+let allGroups = {};
+let pendingEmail = null;
+let pendingAction = null;
 
+// ---- LOGIN ----
 function doLogin() {
   const pw = document.getElementById('pw-input').value;
   if (pw === CONFIG.SUPER_ADMIN_PW) {
@@ -239,27 +354,33 @@ function doLogin() {
 }
 document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-async function init() {
-  // Load existing overrides
-  overrides = await getManualOverrides();
+// ---- TABS ----
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['users','groups','overrides','fixtures'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
 
-  // Populate single-value fields
+// ---- INIT ----
+async function init() {
+  await Promise.all([loadOverrides(), loadUsersAndGroups(), loadFixtures()]);
+}
+
+// ---- OVERRIDES ----
+async function loadOverrides() {
+  overrides = await getManualOverrides();
   ['goldenBoot','goldenGlove','playerOfTournament','tournamentWinner'].forEach(key => {
     const el = document.getElementById(`ov-${key}`);
     if (el && overrides[key]) el.value = overrides[key];
   });
-
-  // Populate tag fields
   Object.keys(tagData).forEach(key => {
     tagData[key] = overrides[key] || [];
     renderTags(key);
   });
-
-  // Populate group top scorers
   buildGroupTopScorers();
-
-  // Load live fixtures
-  await loadFixtures();
 }
 
 function buildGroupTopScorers() {
@@ -267,40 +388,13 @@ function buildGroupTopScorers() {
   grid.innerHTML = '';
   'ABCDEFGHIJKL'.split('').forEach(letter => {
     const val = overrides?.groupTopScorers?.[letter] || '';
-    grid.innerHTML += `
-      <div>
-        <label style="color:#8899aa;font-size:0.82rem;display:block;margin-bottom:4px;">Group ${letter}</label>
-        <input type="text" id="gts-${letter}" value="${val}" placeholder="Player name" oninput="markUnsaved()" style="width:100%;margin:0;padding:8px 10px;font-size:0.85rem;" />
-      </div>`;
+    grid.innerHTML += `<div>
+      <label style="color:#8899aa;font-size:0.82rem;display:block;margin-bottom:4px;">Group ${letter}</label>
+      <input type="text" id="gts-${letter}" value="${val}" placeholder="Player name" oninput="markUnsaved()" style="width:100%;margin:0;padding:8px 10px;font-size:0.85rem;" />
+    </div>`;
   });
 }
 
-async function loadFixtures() {
-  const matches = await fetchOpenfootball();
-  const done = matches.filter(m => m.score).length;
-  document.getElementById('matches-done').textContent = done;
-  document.getElementById('api-status').textContent = `Openfootball live ✓`;
-
-  const tbody = document.getElementById('fixtures-tbody');
-  tbody.innerHTML = '';
-  matches.forEach(m => {
-    const num = m.num || '';
-    const t1 = m.team1 || '—';
-    const t2 = m.team2 || '—';
-    const score = m.score ? `${m.score.ft[0]} – ${m.score.ft[1]}` : 'vs';
-    const status = m.score ? `<span class="match-status status-done">FT</span>` : `<span class="match-status status-sched">${m.date}</span>`;
-    tbody.innerHTML += `<tr>
-      <td style="color:#8899aa">${num || m.round?.substring(0,6) || ''}</td>
-      <td>${t1} vs ${t2}</td>
-      <td><strong>${score}</strong></td>
-      <td>${status}</td>
-    </tr>`;
-  });
-
-  document.getElementById('api-dot').className = 'dot';
-}
-
-// ---- TAG MANAGEMENT ----
 function renderTags(key) {
   const container = document.getElementById(`tags-${key}`);
   if (!container) return;
@@ -317,27 +411,18 @@ function addTag(key) {
   const input = document.getElementById(`input-${key}`);
   const val = input.value.trim();
   if (!val) return;
-  if (!tagData[key].includes(val)) {
-    tagData[key].push(val);
-    renderTags(key);
-    markUnsaved();
-  }
-  input.value = '';
-  input.focus();
+  if (!tagData[key].includes(val)) { tagData[key].push(val); renderTags(key); markUnsaved(); }
+  input.value = ''; input.focus();
 }
 
 function removeTag(key, index) {
-  tagData[key].splice(index, 1);
-  renderTags(key);
-  markUnsaved();
+  tagData[key].splice(index, 1); renderTags(key); markUnsaved();
 }
 
-// ---- UNSAVED INDICATOR ----
 function markUnsaved() {
   document.getElementById('unsaved-indicator').classList.add('show');
 }
 
-// ---- SAVE ----
 async function saveOverrides() {
   const newOverrides = {
     goldenBoot: document.getElementById('ov-goldenBoot').value.trim(),
@@ -348,13 +433,10 @@ async function saveOverrides() {
     groupTopScorers: {},
     savedAt: new Date().toISOString(),
   };
-
-  // Collect group top scorers
   'ABCDEFGHIJKL'.split('').forEach(letter => {
     const el = document.getElementById(`gts-${letter}`);
     if (el && el.value.trim()) newOverrides.groupTopScorers[letter] = el.value.trim();
   });
-
   const ok = await saveManualOverrides(newOverrides);
   if (ok) {
     showToast('Overrides saved ✓');
@@ -362,9 +444,179 @@ async function saveOverrides() {
     document.getElementById('last-saved').textContent = new Date().toLocaleTimeString();
     overrides = newOverrides;
   } else {
-    showToast('Save failed — check connection', true);
+    showToast('Save failed', true);
   }
 }
+
+// ---- USERS & GROUPS ----
+async function loadUsersAndGroups() {
+  const db = await binGet();
+  allUsers = db?.users || {};
+  allGroups = db?.groups || {};
+  document.getElementById('user-count').textContent = Object.keys(allUsers).length;
+  document.getElementById('group-count').textContent = Object.keys(allGroups).length;
+  renderUsers();
+  renderGroups();
+}
+
+function renderUsers() {
+  const search = document.getElementById('user-search').value.toLowerCase();
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = '';
+  const users = Object.entries(allUsers).filter(([email, u]) =>
+    !search || email.includes(search) || u.name?.toLowerCase().includes(search)
+  );
+  if (!users.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#8899aa;text-align:center;padding:20px;">No users found</td></tr>`;
+    return;
+  }
+  users.forEach(([email, u]) => {
+    const groups = (u.groups || []).map(code => {
+      const isAdmin = (u.adminOf || []).includes(code);
+      return `<span class="grp-chip ${isAdmin?'admin':''}">${code}${isAdmin?' ★':''}</span>`;
+    }).join('');
+    const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—';
+    tbody.innerHTML += `<tr>
+      <td><strong>${u.name || '—'}</strong></td>
+      <td style="color:#8899aa;font-size:0.82rem;">${email}</td>
+      <td><span class="pw">${u.password || '—'}</span></td>
+      <td>${groups || '<span style="color:#8899aa">None</span>'}</td>
+      <td style="color:#8899aa;font-size:0.8rem;">${joined}</td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-sm btn-warning" onclick="openResetPw('${email}', '${u.name}')">🔑 Reset PW</button>
+          <button class="btn btn-sm btn-danger" onclick="openDeleteUser('${email}', '${u.name}')">🗑️ Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+}
+
+function renderGroups() {
+  const search = document.getElementById('group-search').value.toLowerCase();
+  const tbody = document.getElementById('groups-tbody');
+  tbody.innerHTML = '';
+  const groups = Object.entries(allGroups).filter(([code, g]) =>
+    !search || code.toLowerCase().includes(search) || g.name?.toLowerCase().includes(search)
+  );
+  if (!groups.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#8899aa;text-align:center;padding:20px;">No groups found</td></tr>`;
+    return;
+  }
+  groups.forEach(([code, g]) => {
+    const members = (g.members || []).map(m => `<span class="member-chip">${m}</span>`).join('');
+    const subCount = Object.keys(g.submissions || {}).length;
+    const locked = g.locked ? '🔒 Locked' : '🔓 Open';
+    tbody.innerHTML += `<tr>
+      <td><strong>${g.name || '—'}</strong></td>
+      <td><code style="color:#f5c518">${code}</code></td>
+      <td>${members || '<span style="color:#8899aa">None</span>'}</td>
+      <td style="text-align:center;">${subCount}</td>
+      <td style="color:#8899aa;font-size:0.82rem;">${locked}</td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-sm ${g.locked?'btn-save':'btn-warning'}" onclick="toggleGroupLock('${code}')">
+            ${g.locked ? '🔓 Unlock' : '🔒 Lock'}
+          </button>
+          <a href="leaderboard.html?code=${code}" target="_blank" class="btn btn-sm btn-primary">📊 View</a>
+        </div>
+      </td>
+    </tr>`;
+  });
+}
+
+// ---- GROUP LOCK ----
+async function toggleGroupLock(code) {
+  const group = allGroups[code];
+  const newLocked = !group.locked;
+  const ok = await setGroupLocked(code, newLocked);
+  if (ok) {
+    showToast(`Group ${code} ${newLocked ? 'locked' : 'unlocked'} ✓`);
+    await loadUsersAndGroups();
+  } else {
+    showToast('Failed to update group', true);
+  }
+}
+
+// ---- RESET PASSWORD MODAL ----
+function openResetPw(email, name) {
+  pendingEmail = email;
+  document.getElementById('modal-pw-user').textContent = `Resetting password for: ${name} (${email})`;
+  document.getElementById('modal-pw-input').value = '';
+  document.getElementById('modal-pw').classList.add('open');
+}
+
+async function confirmResetPw() {
+  const newPw = document.getElementById('modal-pw-input').value.trim();
+  if (!newPw) { showToast('Enter a new password', true); return; }
+  const db = await binGet();
+  if (!db?.users?.[pendingEmail]) { showToast('User not found', true); return; }
+  db.users[pendingEmail].password = newPw;
+  const ok = await binPut(db);
+  if (ok) {
+    showToast('Password reset ✓');
+    closeModal('modal-pw');
+    await loadUsersAndGroups();
+  } else {
+    showToast('Failed to save', true);
+  }
+}
+
+// ---- DELETE USER MODAL ----
+function openDeleteUser(email, name) {
+  pendingEmail = email;
+  document.getElementById('modal-delete-msg').textContent = `Are you sure you want to delete "${name}" (${email})? This cannot be undone.`;
+  document.getElementById('modal-delete').classList.add('open');
+}
+
+async function confirmDelete() {
+  const db = await binGet();
+  if (!db?.users?.[pendingEmail]) { showToast('User not found', true); return; }
+  delete db.users[pendingEmail];
+  const ok = await binPut(db);
+  if (ok) {
+    showToast('User deleted ✓');
+    closeModal('modal-delete');
+    await loadUsersAndGroups();
+  } else {
+    showToast('Failed to delete', true);
+  }
+}
+
+// ---- FIXTURES ----
+async function loadFixtures() {
+  const matches = await fetchOpenfootball();
+  const done = matches.filter(m => m.score).length;
+  document.getElementById('matches-done').textContent = done;
+  document.getElementById('api-status').textContent = `Openfootball live ✓`;
+  document.getElementById('api-dot').style.background = '#28a745';
+  const tbody = document.getElementById('fixtures-tbody');
+  tbody.innerHTML = '';
+  matches.forEach(m => {
+    const score = m.score ? `<strong>${m.score.ft[0]} – ${m.score.ft[1]}</strong>` : 'vs';
+    const status = m.score
+      ? `<span class="match-status status-done">FT</span>`
+      : `<span class="match-status status-sched">Scheduled</span>`;
+    tbody.innerHTML += `<tr>
+      <td style="color:#8899aa">${m.num || ''}</td>
+      <td style="color:#8899aa;font-size:0.8rem;">${m.round || ''}</td>
+      <td>${m.team1 || '—'} vs ${m.team2 || '—'}</td>
+      <td>${score}</td>
+      <td style="color:#8899aa;font-size:0.8rem;">${m.date || ''}</td>
+    </tr>`;
+  });
+}
+
+// ---- MODAL HELPERS ----
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  pendingEmail = null;
+}
+
+// Close modal on background click
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if(e.target === bg) bg.classList.remove('open'); });
+});
 </script>
 </body>
 </html>
